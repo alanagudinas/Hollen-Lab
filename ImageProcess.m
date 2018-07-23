@@ -57,12 +57,15 @@ Im_flat_quad = Im_Flatten_XY2(Im_struct);
 
 Im_data_flat_quad = Im_flat_quad.Spatial.TopoData{1};
 
+
+
 % Deal with background in the image
 % use the strel command here to use a disk of 15 pixels to find out how the 
 % background varies.  we can use this since the background should be flat. 
 % as per
 % https://www.mathworks.com/help/images/image-enhancement-and-analysis.html.
 % (Jason's notes)
+
 
 background = imopen(Im_data_flat_quad,strel('disk',15)); 
 Im_flat_bg = Im_data_flat_quad - background; 

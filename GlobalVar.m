@@ -1,0 +1,3 @@
+% Define global variables!
+
+global 

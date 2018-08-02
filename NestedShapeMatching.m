@@ -1,17 +1,18 @@
-function [ ] = NestedShapeMatching( ImUniBg )
+% Author: Alana Gudinas
+% July 20, 2018
 
-[NestedContoursCell, xdataC, ydataC] = NestedContours(ImUniBg);
+function [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
 
-meanP = mean(ImUniBg(:));
-
-figure; imshow(ImUniBg,[]);
+figure; imshow(ImUniBg,[]); title('Defect that will be used in shape-matching comparison');
 hold on
-plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]) % Plot all the contour lines in the image.
-hold off
+plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]); % Plot all the contour lines in the image.
+
+
+shapehelp = 'Select a rectangular region of the image that contains contour lines you are interested in.';
+h1 = helpdlg(shapehelp,'Contour Selection');
+waitfor(h1);
 
 rect = getrect; % Prompt user to use rectangle selection to choose a region with a defect of interest.
-
-disp('Please select a region containing a defect of interest.');
     
 close all
 
@@ -30,7 +31,9 @@ for k = 1:length(xdataC(1,:))
 end
 hold off
 
-disp('Please select which brightness level you are interested in. The bigger loop represents a darker region. The lowest brightness line will automatically be selected within the rectangle.');
+shapehelp2 = 'Of the cluster of contour lines, select the shape of the defect you are interested. Be sure to completely enclose the shape of interest with the rectangle. The largest line completely inside the rectangle will be chosen as the template defect.';
+h2 = helpdlg(shapehelp2,'Template Selection');
+waitfor(h2);
 
 rect = getrect; % Prompt user to make another selection.
 
@@ -53,7 +56,11 @@ for k = 1:length(xdataC(1,:))
 end
 hold off
 
-pause(1)
+shapehelp3 = 'The template defect is displayed on the uniform background image.';
+h3 = helpdlg(shapehelp3,'Display');
+waitfor(h3);
+pause(2)
+close all
 
 Y1 = [xi, yi]; % variable for shape-matching function.
 
@@ -65,48 +72,43 @@ for i = 1:length(xdataC(1,:))
     num = length(xfd);
     vtx(i) = num;
 end
-xint = [];
-yint = [];
-diffArea = AreaDifference(xi,yi,xdataC,ydataC);
-
-xFilt = [];
-yFilt = [];
-k = 1;
-
-for i = 1:length(xdataC(1,:))
-    xint = xdataC(:,i);
-    yint = ydataC(:,i);
-    xint(isnan(xint)) = [];
-    yint(isnan(yint)) = [];
-    if ((diffArea(i)<100) && (vtx(i)>20)) && (xint(1) == xint(end))
-        xFilt(:,k) = xdataC(:,i);
-        yFilt(:,k) = ydataC(:,i);
-        k = k + 1;
-    end
-end
-
-[rFilt,cFilt] = size(xFilt);
 
 coNest = NestedContoursCell;
 [rN,cN] = size(coNest);
 bestcost = [];
+defCoordsX = [];
+defCoordsY = [];
 
-figure; imshow(ImUniBg,[])
+figure; imshow(ImUniBg,[]);
 hold on
+plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]);
+
+shapehelp4 = 'The shape matching process will begin once this window is closed. It may take a while to run through all of the defects. Once the best fitting shape within each contour cluster has been identified, it will be plotted on the image in yellow.';
+h4 = helpdlg(shapehelp4,'Shape Matching');
+waitfor(h4);
 
 for j = 1:cN
-    [~,ct] = size(coNest{1,j});
+    [rt,ct] = size(coNest{1,j});
     for i = 1:ct
         xCoord = coNest{1,j}(:,i);
         yCoord = coNest{2,j}(:,i);
+        if all(isnan(xCoord))
+            bestcost = [bestcost, NaN];
+            continue
+        end
         xCoord(isnan(xCoord)) = [];
         yCoord(isnan(yCoord)) = [];
-        Y2 = [xCoord, yCoord];
-        [~,~, best_cost] = shape_matching(Y1,Y2, 'aco','shape_context','','chisquare');
-        bestcost = [bestcost, best_cost];
+        if (xCoord(1) == xCoord(end)) && (yCoord(1) == yCoord(end))
+            Y2 = [xCoord, yCoord];
+            [~,~, best_cost] = shape_matching(Y1,Y2, 'aco','shape_context','','chisquare');
+            bestcost = [bestcost, best_cost];
+        end
     end
     [minB,idxB] = min(bestcost);
-    plot(coNest{1,j}(:,idxB),coNest{2,j}(:,idxB),'Color','yellow')
+    plot(coNest{1,j}(:,idxB),coNest{2,j}(:,idxB),'Color','magenta');
+    drawnow
+    defCoordsX = [defCoordsX, coNest{1,j}(:,idxB)];
+    defCoordsY = [defCoordsY, coNest{2,j}(:,idxB)];
     bestcost = [];
 end
 hold off

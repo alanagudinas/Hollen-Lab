@@ -17,7 +17,7 @@
 % noise. It iterates twice over the same image. 
 %------------------------------------------------------------------------------------%
 
-function [ ImUniBg, ImUniBgINIT ] = UniformBackground(Im_proc)
+function [ ImUniBg, ImUniBgINIT, meanPix1, meanPix2 ] = UniformBackground(Im_proc)
 
 ImData = Im_proc;
 
@@ -83,6 +83,7 @@ for j = 1:numel(ImRescale)
     end
 end
 
+meanPix1 = meanPixel;
 ImUniBgINIT = ImTest;
 % figure; imshowpair(ImData,ImTest,'montage') % very nice (so far)
 
@@ -137,5 +138,6 @@ for j = 1:numel(ImTest)
 end
 
 ImUniBg = ImTest2;
+meanPix2 = mpix_t;
 
 end

@@ -101,7 +101,7 @@ Icn = (Ic - min(min(Ic))) / (max(max(Ic)) - min(min(Ic)));
 Imean = mean2(Icn); 
 Istd = std2(Icn); 
 
-figure;imshow(Icn, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected')
+%figure;imshow(Icn, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected')
 
 ImDataLineCorSmooth = imgaussfilt(Icn,2); 
 

@@ -1,27 +1,31 @@
-function [ NestedContoursCell, xdataC, ydataC ] = NestedContours(ImUniBg)
+% Author: Alana Gudinas
+% July 18, 2018
+
+function [ NestedContoursCell, xdataC, ydataC,heightVec, Method] = NestedContours(ImUniBg,meanPix)
 
 meanP = mean(ImUniBg(:));
 
-prompt = 'Are you interested in light, dark, or all defects? B/D/N [N]:';
+str = 'Are you interested in first identifying bright or dark defects? Type "B" for bright defects, and "D" for dark defects.';
+promptdef = {str};
+titleBox = 'Defect Brightness Selection';
+dims = [1 60];
+definput = {'B'};
+defAns = inputdlg(promptdef,titleBox,dims,definput);
+defAns = defAns{1};
 
-answer = input(prompt,'s');
 
-if strcmp(answer,'B')
+if strcmp(defAns,'B')
     Method = 'Bright';
-elseif strcmp(answer,'D')
+elseif strcmp(defAns,'D')
     Method = 'Dark';
-elseif strcmp(answer,'N')
-    Method = 'None';
 end
 
-[ C, hdata, idx, vtx, xdata, ydata ] = ContourData(ImUniBg,Method);
+[ C, hdata, idx, vtx, xdata, ydata, heightVec ] = ContourData(ImUniBg,Method,meanPix);
 
 xdataC = xdata;
 ydataC = ydata;
 nd = length(xdata(1,:));
 k = 1;
-
-NestC = {2,nd};
 
 if strcmp(Method, 'Bright')
     idxVec = [1:1:nd];

@@ -1,2 +1,2 @@
 # Hollen-Lab
-Programs developed for analyzing STM images in the Hollen Lab @ UNH.
+Programs developed for analyzing defects in STM images in the Hollen Lab @ UNH.

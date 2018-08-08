@@ -5,7 +5,10 @@
 % analysis and processing. Should be user-friendly and require minimal
 % knowledge of matlab. Will include a bit of a user guide, default values,
 % and information about the analysis.
-% ImRaw_SM4 is the raw sm4 file, must be a string of the file name. 
+%
+% ImRaw_SM4 is the raw sm4 file, must be a string containing the file name.
+%
+%------------------------------------------------------------------------------------%
 
 function [defCount] = STMDefectAnalysis( ImRaw_SM4 )
 
@@ -18,8 +21,7 @@ ImData = ImSM4.Spatial.TopoData{1}; % ImData is the topographical data of the ra
 figure;imshow(ImData,[]); title('Raw Image Data');
 
 % Process the image using Jason's tools:
-ImFlatSmooth = ImageProcess(ImSM4);
-ImLineFlat = Im_Flatten_X(ImSM4);
+[ImFlatSmooth,ImLineFlat] = ImageProcess(ImSM4);
 
 pause(2);
 close all

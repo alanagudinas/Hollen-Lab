@@ -1,17 +1,26 @@
 % Author: Alana Gudinas
 % 31 July 2018
 %
-% function [appHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
+% [appHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
 %
 % This function outputs statistical information about the defects in an STM
-% image. The inputs are the x and y coordinates of the defects, the line
-% flattened image, and the fully processed image.
+% image. The inputs are: (defCoords) the x and y coordinates of the defects, 
+% (ImLineFlat) the line flattened image, (ImFlatSMooth) the fully processed
+% image, and (nmWidth) the width of the image in nanometers, calculated in 
+% STM DEFECT ANALYSIS.
+%
+%------------------------------------------------------------------------------------%
 
-function [maxHeightVec,meanHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
+function [maxHeightVec,meanHeightVec,areaVec,centData] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
 
-dastr = 'The apparent height and area statistics of the identified defects will now be computed.';
-hd = helpdlg(dastr,'Defect Analysis');
-waitfor(hd);
+global help_dlg
+global output_graph
+
+if help_dlg
+    dastr = 'The apparent height and area statistics of the identified defects will now be computed.';
+    hd = helpdlg(dastr,'Defect Analysis');
+    waitfor(hd);
+end
 
 % Start by calculating the area of each defect by creating a binary image
 % of each contour plot (which represents a defect) 
@@ -20,6 +29,7 @@ waitfor(hd);
 
 nx = length(defCoordsX(1,:));
 defArea = zeros(nx,1); % Create empty vector to store the area data.
+centData = zeros(nx,2);
 xInt = defCoordsX;
 yInt = defCoordsY;
 
@@ -30,6 +40,10 @@ for i = 1:nx
     yInt(isnan(yInt)) = [];
     imBi = poly2mask(xInt,yInt,rI,cI); % Creates binary image from contour coordinates.
     defArea(i) = bwarea(imBi); % Compute area of any white pixels in binary image.
+    s = regionprops(imBi,'Centroid'); % Find coordinates of center of defect.
+    centRef = cat(1, s.Centroid);
+    centData(i,1) = centRef(1);
+    centData(i,2) = centRef(2);
 end
 
 % Next, compute apparent height statistics.
@@ -44,12 +58,14 @@ maxlim = max(max(ImLine)); % For rescaling image.
 
 close all
 
-figure;imshow(ImLine); title('Line Flattened Image Data');
-colorbar
-lim = caxis;
-caxis([minlim maxlim]); % Change image scale for visualization and calculations.
+if output_graph
+    figure;imshow(ImLine); title('Line Flattened Image Data');
+    colorbar
+    lim = caxis;
+    caxis([minlim maxlim]); % Change image scale for visualization and calculations.
 
-hold on
+    hold on
+end
 
 maxHeightVec = zeros(nx,1); % Empty variables for apparent height stats.
 meanHeightVec = zeros(nx,1);
@@ -65,12 +81,16 @@ for i = 1:nx
         c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
         maxHeightVec(i) = max(c);
         meanHeightVec(i) = mean(c);
-        plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
-        hold on
+        if output_graph
+            plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
+            hold on
+        end
     end
 end
 
-plot(defCoordsX,defCoordsY,'Color','yellow')
+if output_graph
+    plot(defCoordsX,defCoordsY,'Color','yellow')
+end
 
 maxHeightVec = maxHeightVec * 1e9; % Change units to nm, since original data is in m. 
 meanHeightVec = meanHeightVec * 1e9;
@@ -93,23 +113,27 @@ defAreaScale = defArea/imSq;
 szV = 40;
 xrange = [1:1:nx]';
 
-figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
-hold on
-xlabel('Index','FontSize',15);
-ylabel('Area (nm^2)','FontSize',15);
-hold off
+if output_graph
+    figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
+    hold on
+    xlabel('Index','FontSize',15);
+    ylabel('Area (nm^2)','FontSize',15);
+    hold off
+end
 
 maxHSort = sort(maxHeightVec);
 meanHSort = sort(meanHeightVec);
 
-sz = 50;
-figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
-hold on
-scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled');
-xlabel('Index','FontSize',15);
-ylabel('Apparent Height (nm)','FontSize',15);
-legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')
-hold off
+if output_graph
+    sz = 50;
+    figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
+    hold on
+    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled');
+    xlabel('Index','FontSize',15);
+    ylabel('Apparent Height (nm)','FontSize',15);
+    legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')
+    hold off
+end
 
 areaVec = defAreaScale;
 

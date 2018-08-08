@@ -1,21 +1,25 @@
-% [ ImFlatSmooth ] = ImageProcess( Im_struct )
+% Author: Alana Gudinas
+% June 2018
 %
-% This program uses a combination of Jason's image processing techniques
-% found in OneNote with those of SPIW to prepare images for further analysis.
+% [ ImFlatSmooth, ImLineFlat ] = ImageProcess( Im_struct )
 %
+% This program uses Jason Moscatello's image processing techniques
+% to prepare STM images for further analysis.
+% 
 % The input must be a matlab data structure. A STM image in the form of a
 % .sm4 file can be converted to a .mat structure with Jason's sm4tomatlab.m
 % program. 
 %
 % The output is the processed image topography data for use in image
 % analysis. 
+%
+%------------------------------------------------------------------------------------%
 
-function ImFlatSmooth = ImageProcess(Im_struct)
+function [ImFlatSmooth,ImLineFlat] = ImageProcess(Im_struct)
 
+Im_data = Im_struct.Spatial.TopoData{1}; % Define variable for topological data of the image. 
 
-Im_data = Im_struct.Spatial.TopoData{1}; % define variable for topological data of the image. 
-
-% Jason's method of line-by-line flattening of the image:
+% Line-by-line flattening of the image:
 
 for n=1:length(Im_data(1,:)) 
 %create an array of x-data 
@@ -36,27 +40,20 @@ for n=1:length(Im_data(1,:))
 
 end
 
-% AG: Try the flattening with a quadratic fit and see results:
-
+% For comparison purposes, line flatten with quadratic fit:
 for n=1:length(Im_data(1,:)) 
 
    %fit data with a quadratic
    
    p2 = polyfit(x,y,2);
    linecorrect2 = (x.^2).*p2(1) + x.*p2(2) + p2(3); 
-   Im_data_flat_quad(:,n)=Im_data(:,n)-linecorrect2; % Im_data_flat_quad is the flattened image. 
+   Im_data_flat_quad(:,n)=Im_data(:,n)-linecorrect2; % Im_data_flat_quad is now the flattened image. 
    
 end
 
-% Flatten with SPIW's method instead. Im_Flatten_XY2 "performs line by line fitting on input image. 
-% The resulting plane is then line by line fitted in Y. The resulting plane is not truly a
-% polynomial plane. This method can perform well for visualisation with
-% much lower distortion than Im_Flatten_X."
-  
-Im_flat_quad = Im_Flatten_XY2(Im_struct);
+ImLineFlat = Im_data_flat_quad; % Not for analysis, but for apparent height analysis and visualization.
 
-Im_data_flat_quad = Im_flat_quad.Spatial.TopoData{1};
-
+ImLineFlat = Im_Flatten_XY2(Im_data);
 
 
 % Deal with background in the image
@@ -65,7 +62,6 @@ Im_data_flat_quad = Im_flat_quad.Spatial.TopoData{1};
 % as per
 % https://www.mathworks.com/help/images/image-enhancement-and-analysis.html.
 % (Jason's notes)
-
 
 background = imopen(Im_data_flat_quad,strel('disk',15)); 
 Im_flat_bg = Im_data_flat_quad - background; 

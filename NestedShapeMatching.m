@@ -12,7 +12,7 @@
 % The inputs are: (ImUniBg) the output of UNIFORM BACKGROUND,
 % (NestedContoursCell) a cell array, and (dataC) matrices of the contour
 % data.
-% The outputs are (defCoords) the coordinates of the defect plots resulting
+% The outputs are (defCoordsX/Y) the coordinates of the defect plots resulting
 % from the shape matching.
 %------------------------------------------------------------------------------------%
 
@@ -20,6 +20,7 @@
 function [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
 
 global hMethod
+global help_dlg
 
 nx = length(xdataC(1,:));
 
@@ -34,9 +35,11 @@ hold on
 plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]); % Plot all the contour lines in the image.
 
 
-shapehelp = 'Select a rectangular region of the image that contains contour lines you are interested in.';
-h1 = helpdlg(shapehelp,'Contour Selection');
-waitfor(h1);
+if help_dlg
+    shapehelp = 'Select a rectangular region of the image that contains contour lines you are interested in.';
+    h1 = helpdlg(shapehelp,'Contour Selection');
+    waitfor(h1);
+end
 
 rect = getrect; % Prompt user to use rectangle selection to choose a region with a defect of interest.
     
@@ -57,9 +60,11 @@ for k = idxN
 end
 hold off
 
-shapehelp2 = 'Of the cluster of contour lines, select the shape of the defect you are interested. Be sure to completely enclose the shape of interest with the rectangle. The largest line completely inside the rectangle will be chosen as the template defect.';
-h2 = helpdlg(shapehelp2,'Template Selection');
-waitfor(h2);
+if help_dlg
+    shapehelp2 = 'Of the cluster of contour lines, select the shape of the defect you are interested. Be sure to completely enclose the shape of interest with the rectangle. The largest line completely inside the rectangle will be chosen as the template defect.';
+    h2 = helpdlg(shapehelp2,'Template Selection');
+    waitfor(h2);
+end
 
 rect = getrect; % Prompt user to select which line they are interested in. 
 
@@ -82,9 +87,12 @@ for k = idxN
 end
 hold off
 
-shapehelp3 = 'The template defect is displayed on the uniform background image.';
-h3 = helpdlg(shapehelp3,'Display');
-waitfor(h3);
+if help_dlg
+    shapehelp3 = 'The template defect is displayed on the uniform background image.';
+    h3 = helpdlg(shapehelp3,'Display');
+    waitfor(h3);
+end
+
 pause(2)
 close all
 
@@ -109,9 +117,11 @@ figure; imshow(ImUniBg,[]);
 hold on
 plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]);
 
-shapehelp4 = 'The shape matching process will begin once this window is closed. It may take a while to run through all of the defects. Once the best fitting shape within each contour cluster has been identified, it will be plotted on the image in yellow.';
-h4 = helpdlg(shapehelp4,'Shape Matching');
-waitfor(h4);
+if help_dlg
+    shapehelp4 = 'The shape matching process will begin once this window is closed. It may take a while to run through all of the defects. Once the best fitting shape within each contour cluster has been identified, it will be plotted on the image in yellow.';
+    h4 = helpdlg(shapehelp4,'Shape Matching');
+    waitfor(h4);
+end
 
 bestvec = [];
 for j = 1:cN

@@ -128,8 +128,25 @@ if strcmp(smallans,'S')
         end
     end
 
-    defAddX = defAddX + rectData(1); % change of coordinates to plot contour on original image
-    defAddY = defAddY + rectData(2);
+    if isempty(defAddX)
+        stri = 'Please select a region containing an entire contour plot!';
+        hels = helpdlg(stri,'Last Try');
+        waitfor(hels);
+        rect = getrect; % of plotted contours, choose what should be identified as a defect
+        for i = 1:length(defCoordsX(1,:))
+            xA = defCoordsX(:,i);
+            yA = defCoordsY(:,i);
+            xA(isnan(xA)) = [];
+            yA(isnan(yA)) = [];
+            if ((xA > rect(1)) & (xA < (rect(1)+rect(3)))) & ((yA > rect(2)) & (yA < (rect(2)+rect(4))))
+                defAddX(:,i) = defCoordsX(:,i);
+                defAddY(:,i) = defCoordsY(:,i);
+            end
+        end
+        defAddX = defAddX + rectData(1); % change of coordinates to plot contour on original image
+        defAddY = defAddY + rectData(2);
+    end
+    
 elseif strcmp(smallans,'M')
     figure; imshow(ImSect,[]);
     hold on

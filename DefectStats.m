@@ -9,12 +9,26 @@
 % image, and (nmWidth) the width of the image in nanometers, calculated in 
 % STM DEFECT ANALYSIS.
 %
+% The outputs are:
+% maxHeightVec: a vector of the maximum apparent brightness of each defect
+% (the brightness data is taken over a line drawn vertically across the
+% defect contour)
+% meanHeightVec: a vector of the avearage apparent brightness of each
+% defect
+% areaVec: a vector of the area (to scale) of each defect, based on the
+% contour plot
+% centData: an array of the coordinates of the centroid of each defect
+% contour
 %------------------------------------------------------------------------------------%
 
 function [maxHeightVec,meanHeightVec,areaVec,centData] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
 
 global help_dlg
 global output_graph
+global metaDataFile
+
+fileID = fopen(metaDataFile,'a+'); % open txt file
+formatSpec = '%s\n';
 
 if help_dlg
     dastr = 'The apparent height and area statistics of the identified defects will now be computed.';
@@ -38,12 +52,14 @@ for i = 1:nx
     yInt = defCoordsY(:,i);
     xInt(isnan(xInt)) = [];
     yInt(isnan(yInt)) = [];
-    imBi = poly2mask(xInt,yInt,rI,cI); % Creates binary image from contour coordinates.
-    defArea(i) = bwarea(imBi); % Compute area of any white pixels in binary image.
-    s = regionprops(imBi,'Centroid'); % Find coordinates of center of defect.
-    centRef = cat(1, s.Centroid);
-    centData(i,1) = centRef(1);
-    centData(i,2) = centRef(2);
+    if ~isempty(xInt)
+        imBi = poly2mask(xInt,yInt,rI,cI); % Creates binary image from contour coordinates.
+        defArea(i) = bwarea(imBi); % Compute area of any white pixels in binary image.
+        s = regionprops(imBi,'Centroid'); % Find coordinates of center of defect.
+        centRef = cat(1, s.Centroid);
+        centData(i,1) = centRef(1);
+        centData(i,2) = centRef(2);
+    end
 end
 
 % Next, compute apparent height statistics.
@@ -63,29 +79,56 @@ if output_graph
     colorbar
     lim = caxis;
     caxis([minlim maxlim]); % Change image scale for visualization and calculations.
-
     hold on
 end
 
 maxHeightVec = zeros(nx,1); % Empty variables for apparent height stats.
 meanHeightVec = zeros(nx,1);
 
-for i = 1:nx
-    defY = defCoordsY(:,i);
-    defY(isnan(defY)) = [];
-    if ~isempty(defY)
-        [y(2),yIdx(2)] = max(defY); % Find the max and min y value of each contour.
-        [y(1),yIdx(1)] = min(defY);
-        x(2) = defCoordsX(yIdx(2),i);
-        x(1) = defCoordsX(yIdx(1),i);
-        c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
-        maxHeightVec(i) = max(c);
-        meanHeightVec(i) = mean(c);
-        if output_graph
-            plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
-            hold on
+prompt = 'Specify whether to take a vertical or horizontal cross-section of the defects for apparent height statistics: [V/H]';
+definput = {'V'};
+titleBox = 'Apparent Height Statistics';
+dims = [1 60];
+vh = inputdlg(prompt,titleBox,dims,definput);
+vh = vh{1};
+
+
+if strcmp(vh,'V')
+    for i = 1:nx
+        defY = defCoordsY(:,i);
+        defY(isnan(defY)) = [];
+        if ~isempty(defY)
+            [y(2),yIdx(2)] = max(defY); % Find the max and min y value of each contour.
+            [y(1),yIdx(1)] = min(defY);
+            x(2) = defCoordsX(yIdx(2),i);
+            x(1) = defCoordsX(yIdx(1),i);
+            c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
+            maxHeightVec(i) = max(c);
+            meanHeightVec(i) = mean(c);
+            if output_graph
+                plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
+                hold on
+            end
         end
     end
+elseif strcmp(vh,'H')
+     for i = 1:nx
+        defY = defCoordsY(:,i);
+        defY(isnan(defY)) = [];
+        if ~isempty(defY)
+            [x(2),xIdx(2)] = max(defX); % Find the max and min y value of each contour.
+            [x(1),xIdx(1)] = min(defX);
+            y(2) = defCoordsX(xIdx(2),i);
+            y(1) = defCoordsX(xIdx(1),i);
+            c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
+            maxHeightVec(i) = max(c);
+            meanHeightVec(i) = mean(c);
+            if output_graph
+                plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
+                hold on
+            end
+        end
+     end
 end
 
 if output_graph
@@ -135,6 +178,7 @@ if output_graph
     hold off
 end
 
+fprintf(fileID,formatSpec,'Apparent height and area vectors computed');
 areaVec = defAreaScale;
 
 end

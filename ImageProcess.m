@@ -1,30 +1,43 @@
 % Author: Alana Gudinas
 % June 2018
 %
-% [ ImFlatSmooth, ImLineFlat ] = ImageProcess( Im_struct )
+% [ ImFlatSmooth, ImLineFlat ] = ImageProcess( ImData )
 %
 % This program uses Jason Moscatello's image processing techniques
 % to prepare STM images for further analysis.
 % 
-% The input must be a matlab data structure. A STM image in the form of a
-% .sm4 file can be converted to a .mat structure with Jason's sm4tomatlab.m
-% program. 
+% The input must be an image data array. If the data has dimensions m x n x
+% z, where z > 1, the program will automatically use ImData(:,:,1).
 %
-% The output is the processed image topography data for use in image
-% analysis. 
+% The outputs are:
+% ImFlatSmooth: the final processed image
+% ImLineFlat: the line-by-line flattened image
 %
 %------------------------------------------------------------------------------------%
 
-function [ImFlatSmooth,ImLineFlat] = ImageProcess(Im_struct)
+function [ImFlatSmooth,ImLineFlat] = ImageProcess(ImData)
 
-Im_data = Im_struct.Spatial.TopoData{1}; % Define variable for topological data of the image. 
+global metaDataFile
+fileID = fopen(metaDataFile,'a+'); % open txt file
+formatSpec = '%s\n';
+
+[r,c,d] = size(ImData);
+
+if d > 1 % only use the first layer of the data array
+    ImData = ImData(:,:,1);
+    ImData = mat2gray(ImData);
+end
+
+global output_graph
+
+Im_data = ImData;
 
 % Line-by-line flattening of the image:
 
 for n=1:length(Im_data(1,:)) 
 %create an array of x-data 
     x = 1:length(Im_data(:,n)); 
-    x = transpose(x); % needed for x and y to have same dimesion directions 
+    x = transpose(x); % needed for x and y to have same dimension directions 
 
    % extract the y data from row n 
 
@@ -51,10 +64,12 @@ for n=1:length(Im_data(1,:))
    
 end
 
+fprintf(fileID,formatSpec,'Image data line-by-line flattened');
 ImLineFlat = Im_data_flat_quad; % Not for analysis, but for apparent height analysis and visualization.
 
-ImLineFlat = Im_Flatten_XY2(Im_data);
+% ImLineFlat = Im_Flatten_XY2(Im_data); need to alter
 
+figure;imshow(ImLineFlat,[])
 
 % Deal with background in the image
 % use the strel command here to use a disk of 15 pixels to find out how the 
@@ -66,11 +81,14 @@ ImLineFlat = Im_Flatten_XY2(Im_data);
 background = imopen(Im_data_flat_quad,strel('disk',15)); 
 Im_flat_bg = Im_data_flat_quad - background; 
 
+fprintf(fileID,formatSpec,'Background corrected');
+
 % normalize the data for better display 
 
 normIm_flat = (Im_data_flat_quad - min(min(Im_data_flat_quad))) / (max(max(Im_data_flat_quad)) - min(min(Im_data_flat_quad))); 
 normIm_flat_bg = (Im_flat_bg - min(min(Im_flat_bg))) / (max(max(Im_flat_bg)) - min(min(Im_flat_bg))); 
 
+fprintf(fileID,formatSpec,'Image data normalized');
 % getting normalized vectors and some statistics in order to plot better 
 
 meanIm_flat_bg = mean2(normIm_flat_bg);
@@ -82,11 +100,14 @@ high = meanIm_flat_bg + stdIm_flat_bg;
 
 ImflatA = imadjust(normIm_flat, [.001 .3],[]); 
 
+fprintf(fileID,formatSpec,'Contrast adjusted');
+
 ImflatbgA = imadjust(normIm_flat_bg, [low high],[]); 
 
-figure; imshowpair(ImflatA,ImflatbgA, 'montage'); title('Line Flatten to Background Correction'); 
-
-% wow, get rid of line noise!!
+if output_graph
+    figure; imshowpair(ImflatA,ImflatbgA, 'montage'); title('Line Flatten to Background Correction'); 
+end
+% get rid of line noise
 
 % filter strongly along the direction of the lines to get a background you 
 % can subtract 
@@ -97,12 +118,16 @@ Icn = (Ic - min(min(Ic))) / (max(max(Ic)) - min(min(Ic)));
 Imean = mean2(Icn); 
 Istd = std2(Icn); 
 
+fprintf(fileID,formatSpec,'Filtered along direction of lines');
+
 %figure;imshow(Icn, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected')
 
 ImDataLineCorSmooth = imgaussfilt(Icn,2); 
+fprintf(fileID,formatSpec,'Gaussian filter applied');
 
-figure; imshow(ImDataLineCorSmooth, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected and Smoothed'); 
- 
+if output_graph
+    figure; imshow(ImDataLineCorSmooth, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected and Smoothed'); 
+end
 ImFlatSmooth = ImDataLineCorSmooth; % Final processed image.
 
 end

@@ -26,6 +26,10 @@ function [NestedContoursCell, xdataC, ydataC, heightVec] = NestedContours(ImUniB
 
 meanP = mean(ImUniBg(:));
 global hMethod 
+global metaDataFile
+
+fileID = fopen(metaDataFile,'a+');
+formatSpec = 'Defects of interest: %s\n';
 
 str = 'Are you interested in first identifying bright or dark defects? Type "B" for bright defects, and "D" for dark defects.';
 promptdef = {str};
@@ -43,6 +47,8 @@ elseif strcmp(defAns,'D')
     Method = 'Dark';
     hMethod = 0;
 end
+
+fprintf(fileID,formatSpec,Method);
 
 % Generate contour data
 [ C, hdata, idx, vtx, xdata, ydata, heightVec ] = ContourData(ImUniBg,Method,meanPix);
@@ -64,8 +70,8 @@ end
 
 for i = idxVec
     if ~all(isnan(xdata(:,i)))
-        NestC{1,k} = [ ];
-        NestC{2,k} = [ ];
+        NestC{1,k} = [xdata(:,i)];
+        NestC{2,k} = [ydata(:,i)];
         Xmax = max(xdata(:,i));
         Xmin = min(xdata(:,i));
         Ymax = max(ydata(:,i));
@@ -81,22 +87,14 @@ for i = idxVec
                     yC = ydata(:,j);
                     NestC{1,k} = [ NestC{1,k} , xC ];
                     NestC{2,k} = [ NestC{2,k} , yC ];
-                    xdata(:,j) = NaN;
-                    ydata(:,j) = NaN;        
+                    xdata(:,j) = NaN(length(xdata(:,1)),1);
+                    ydata(:,j) = NaN(length(ydata(:,1)),1);        
                 end  
             end
         end
         k = k + 1;
     end
 end
-
-[rC, cC] = size(NestC);
-
-for i = 1:cC
-    NestC{1,i} = [NestC{1,i}, xdata(:,i)];
-    NestC{2,i} = [NestC{2,i}, ydata(:,i)];
-end
-    
 
 NestedContoursCell = NestC;
 

@@ -19,6 +19,10 @@
 
 function [ ImUniBg, ImUniBgINIT, meanPix1, meanPix2 ] = UniformBackground(Im_proc)
 
+global metaDataFile
+fileID = fopen(metaDataFile,'a+'); % open txt file
+formatSpec = '%s\n';
+
 ImData = Im_proc;
 
 ImRescale = ImData; % Rescale image to have pixel values that range from 0 to 1. (Purely for simplicity)
@@ -63,8 +67,16 @@ ImTest = ImRescale;
 %
 
 ImReVecSort = sort(ImReVec);
-pix1 = ImReVecSort(1:nd/2); % this is the mean pixel brightness of the first half (the lower half) of the image vector.
-pix2 = ImReVecSort(nd/2:end); % mean pixel of the "brighter" half.
+
+bmod = mod(nd,2);
+
+if bmod ~= 0 
+    nde = (nd+1)/2;
+else
+    nde = nd/2;
+end
+pix1 = ImReVecSort(1:nde); % this is the mean pixel brightness of the first half (the lower half) of the image vector.
+pix2 = ImReVecSort(nde:end); % mean pixel of the "brighter" half.
 
 mpix1 = mean(pix1);
 mpix2 = mean(pix2);
@@ -85,6 +97,7 @@ end
 
 meanPix1 = meanPixel;
 ImUniBgINIT = ImTest;
+fprintf(fileID,formatSpec,'New image generated with improved background uniformity');
 % figure; imshowpair(ImData,ImTest,'montage') % very nice (so far)
 
 % Now, from the new images with semi-uniform backgrounds, create defect
@@ -108,8 +121,14 @@ ImTestSort = sort(ImTestVec);
 
 pixVec2 = ImTestSort;
 
-pix1_t = ImTestSort(1:nd/2);
-pix2_t = ImTestSort(nd/2:end);
+if bmod ~= 0 
+    nde = (nd+1)/2;
+else
+    nde = nd/2;
+end
+
+pix1_t = ImTestSort(1:nde);
+pix2_t = ImTestSort(nde:end);
 
 mpix_t = mean(ImTestVec);
 mpix1_t = mean(pix1_t);
@@ -123,7 +142,7 @@ for i = 1:nd-1
     pixDiff_t(i) = abs(ImTestVec(i+1) - ImTestVec(i));
 end
 
-avgDiff_t = mean(pixDiff_t(nd/2:end));
+avgDiff_t = mean(pixDiff_t(nde:end));
 maxDt = max(pixDiff_t);
 minDt = min(pixDiff_t);
 
@@ -138,6 +157,8 @@ for j = 1:numel(ImTest)
 end
 
 ImUniBg = ImTest2;
+
+fprintf(fileID,formatSpec,'New (2) image generated with improved background uniformity');
 meanPix2 = mpix_t;
 
 end

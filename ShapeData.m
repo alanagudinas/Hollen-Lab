@@ -17,21 +17,37 @@
 % In the future I may create separate functions for the loops that delete
 % and add contours to the image.
 %
+% This function allows the user to decide at various moments whether to
+% manually add or delete defect contours from the image.
+%
 %------------------------------------------------------------------------------------%
 
 function [ defCoordsX, defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
 
 global help_dlg
+global metaDataFile
+
+fileID = fopen(metaDataFile,'a+'); % open txt file
+formatSpec = '%s\n';
 
 [rU,cU] = size(ImUniBg);
 
 [NestedContoursCell, xdataC, ydataC] = NestedContours(ImUniBg,meanPix); % generate cell array of contour groups 
 
+fprintf(fileID,formatSpec,'Contour data generated');
+
 figure; imshow(ImLineFlat,[]);
-figure; imshow(ImUniBg,[]);
+
+figure; imshow(ImFlatSmooth,[])
 hold on
-plot(xdataC,ydataC,'Color','yellow'); % display contour data
-hold off
+[~,cN] = size(NestedContoursCell);
+for i = 1:cN
+    [~,ct] = size(NestedContoursCell{1,i});
+    for j = 1:ct
+        plot(NestedContoursCell{1,i}(:,j),NestedContoursCell{2,i}(:,j),'Color','cyan')
+        hold on
+    end
+end
 
 if help_dlg
     strhelp = 'You have the option to filter the contour data (the yellow lines in the figure) before you use shape matching to identify defects. There are two filters you may apply: an area filter and a vertex filter.';
@@ -48,6 +64,7 @@ optionfilt = optionfilt{1};
 
 if strcmp(optionfilt,'No')
     [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC);
+    fprintf(fileID,formatSpec,'Shape matching completed');
 elseif strcmp(optionfilt,'Yes')
     if help_dlg
         strhelp2 = 'The area filter is defined by the difference in area between your target defect and the other contour lines in the image. For larger defects, an area filter that is < 100 is restrictive. 250 is a good starting point. For smaller defects, start with a value of 150. The vertex filter is specified by the number of points in each contour plot. You may specify a maximum or minimum amount of vertices a contour line can have. A good minimum is 20 vertices.';
@@ -76,14 +93,13 @@ elseif strcmp(optionfilt,'Yes')
         waitfor(h5);
     end
     
-    rectSh = getrect; % allows user to select rectangle region on current figure 
-    
     coNest = NestedContoursCell; % easier to type 
     [rN,cN] = size(coNest);
     xCoord = [];
     yCoord = [];
-    
-    figure;
+    rectSh = getrect; % allows user to select rectangle region on current figure 
+    close all
+
     for j = 1:cN 
         [~,ct] = size(coNest{1,j});
         for i = 1:ct
@@ -168,6 +184,7 @@ elseif strcmp(optionfilt,'Yes')
                     if length(xCoord) <= vtxFilt
                         FilteredNest{1,j}(:,i) = NaN(rt,1); % if the contour is below vertex filter, insert NaNs
                         FilteredNest{2,j}(:,i) = NaN(rt,1);
+                        continue
                     elseif length(xCoord) > vtxFilt % otherwise...calculate the difference in area of each contour against the reference
                         ImBWComp = poly2mask(xCoord,yCoord,rU,cU); % binary image of contour 
                         sdata = regionprops(ImBWComp,'Centroid');
@@ -178,7 +195,7 @@ elseif strcmp(optionfilt,'Yes')
                         diffY = yComp - yCent;
                         xChange = xi + diffX; % add difference to target defect to overlay the shape with the defect currently being tested
                         yChange = yi + diffY;
-                        Im_binC = poly2mask(xChange,yChange,512,512); % make a new binary image
+                        Im_binC = poly2mask(xChange,yChange,cU,rU); % make a new binary image
                         ImDiff = imsubtract(Im_binC,ImBWComp); % subtract the white area of the reference with the current defect
                         diffArea = bwarea(ImDiff); % area difference vector
                         if diffArea > areaFilt
@@ -191,7 +208,10 @@ elseif strcmp(optionfilt,'Yes')
         end
     end
     
-    diffAreaVec = AreaDifference(xi,yi,xdataC,ydataC); % repeat the process with the non-cell array data for comparison
+    formatFilt = 'Area filter: %d, vertex filter: %d\n';
+    fprintf(fileID,formatFilt,[areaFilt; vtxFilt]);
+    
+    diffAreaVec = AreaDifference(xi,yi,xdataC,ydataC,cU,rU); % repeat the process with the non-cell array data for comparison
     xint = [];
     yint = [];
     xFilt = [];
@@ -233,12 +253,17 @@ elseif strcmp(optionfilt,'Yes')
             hold on
         end
     end
-    [defCoordsX, defCoordsY, bestvec] = NestedShapeMatching(ImUniBg, FilteredNest, xFilt, yFilt); % shove coordinates into shape matching program
+    [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, FilteredNest, xFilt, yFilt); % shove coordinates into shape matching program
+    fprintf(fileID,formatSpec,'Shape matching completed');
 end
-
+    
 figure; imshow(ImFlatSmooth,[]); title('Results of the first round of identification via shape matching'); 
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
+hold off
+figure; imshow(ImLineFlat,[]);
+hold on
+plot(defCoordsX,defCoordsY,'Color','yellow');
 hold off
 
 prompt1 = 'Are all the defects in the image correctly identified? (Yes/No)';
@@ -282,6 +307,7 @@ elseif strcmp(option1,'No')
             end
             xCoordDel = defCoordsX; % new variable for defects after deletion process
             yCoordDel = defCoordsY;
+            numD = 0;
             pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:'; % input from command line
             anspd = input(pd);
             while anspd ~= 0
@@ -299,6 +325,7 @@ elseif strcmp(option1,'No')
                         hold on
                         plot(xCoordDel,yCoordDel,'Color','yellow')
                         hold off
+                        numD = numD + 1;
                     end
                 end
                 pd = 'Type "0" when finished removing defects. [0]:';
@@ -308,8 +335,11 @@ elseif strcmp(option1,'No')
             xCoordDel( :, ~any(xCoordDel,1) ) = []; 
             yCoordDel( ~any(yCoordDel,2), : ) = [];  
             yCoordDel( :, ~any(yCoordDel,1) ) = []; 
-            xCoordDel(xCoorDel == 0) = NaN; % set zeros to NaN
+            xCoordDel(xCoordDel == 0) = NaN; % set zeros to NaN
             yCoordDel(yCoordDel == 0) = NaN; 
+            
+            delSpec = 'Number of contours deleted: %d\n';
+            fprintf(fileID,delSpec,numD);
             
             prompt4 = 'Are there defects that should be added? (Yes/No)';
             titleBox = 'Defect Addition';
@@ -333,10 +363,12 @@ elseif strcmp(option1,'No')
                 defAddX = zeros(750,100); % since all the added contours will be different lengths, need to set empty matrix. Not the best way.
                 defAddY = zeros(750,100);
                 k = 1;
+                numA = 0;
                 while anspd ~= 0 
                     rectAdd = getrect; % user selects region that needs further analysis
                     [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd); % rectangle coordinates are inputted
                     [rx,cx] = size(AddX);
+                    numA = numA + cx;
                     for i = 1:cx
                         defAddX(1:rx,k) = AddX(:,i); % add new defect coordinates to matrix
                         defAddY(1:rx,k) = AddY(:,i);
@@ -372,6 +404,10 @@ elseif strcmp(option1,'No')
                     pd = 'Type "0" when finished adding defects. [0]:';
                     anspd = input(pd); % repeat until user types "0"
                 end
+                
+                addSpec = 'Number of defects added: %d\n';
+                fprintf(fileID,addSpec,numA);
+                
             elseif strcmp(option4,'No')
                 defCoordsX = xCoordDel;
                 defCoordsY = yCoordDel;
@@ -393,10 +429,12 @@ elseif strcmp(option1,'No')
         defAddX = zeros(750,100);
         defAddY = zeros(750,100);
         k = 1;
+        numA = 0;
         while anspd ~= 0 
             rectAdd = getrect;
             [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
             [rx,cx] = size(AddX);
+            numA = numA + cx;
             for i = 1:cx
                 defAddX(1:rx,k) = AddX(:,i);
                 defAddY(1:rx,k) = AddY(:,i);
@@ -432,7 +470,9 @@ elseif strcmp(option1,'No')
             pd = 'Type "0" when finished adding defects. [0]:';
             anspd = input(pd);
         end
-
+        addSpec = 'Number of defects added: %d\n';
+        fprintf(fileID,addSpec,numA);
+        
         prompt3 = 'Are there defects that should be removed? (Yes/No)';
         titleBox = 'Defect Removal';
         dims = [1 60];
@@ -451,6 +491,7 @@ elseif strcmp(option1,'No')
             yCoordDel = defCoordsY;
             pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
             anspd = input(pd);
+            numD = 0;
             while anspd ~= 0
                 rectld = getrect;
                 for j = 1:length(defCoordsX(1,:))
@@ -462,15 +503,18 @@ elseif strcmp(option1,'No')
                         xCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1);
                         yCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1);
                         close all
-                        figure; imshow(ImUniBg,[]);
+                        figure; imshow(ImLineFlat,[]);
                         hold on
                         plot(xCoordDel,yCoordDel,'Color','yellow')
                         hold off
+                        numD = numD + 1;
                     end
                 end
                 pd = 'Type "0" when finished removing defects. [0]:';
                 anspd = input(pd);
             end 
+            delSpec = 'Number of defects deleted: %d\n';
+            fprintf(fileID, delSpec, numD);
             hold off
             defCoordsX = xCoordDel;
             defCoordsY = yCoordDel;
@@ -494,6 +538,7 @@ definput = {'N'};
 optquick = inputdlg(quickadd,titleBox,dims,definput);
 optquick = optquick{1};
 
+% this only works if xdataC is now somehow the same size as defCoordsX
 if strcmp(optquick,'N')
     figure; imshow(ImLineFlat,[]); title('All identified defects');
     hold on
@@ -505,6 +550,15 @@ elseif strcmp(optquick,'Y')
     figure; imshow(ImLineFlat,[]);
     hold on
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
+    [r1,c1] = size(defCoordsX);
+    [r2,c2] = size(xdataC);
+    if r1 > r2
+        xdataC(r2+1:r1,:) = NaN;
+        ydataC(r2+1:r1,:) = NaN;
+    elseif r2 > r1
+        defCoordsX(r1+1:r2,:) = NaN;
+        defCoordsY(r1+1:r2,:) = NaN;
+    end     
     if help_dlg
         quickhelp = 'Draw a rectangle around a region where you wish to plot a contour line. When prompted by the command line, type "1" to begin. Type "0" when you are finished.';
         qh = helpdlg(quickhelp,'Quick Add');
@@ -512,36 +566,36 @@ elseif strcmp(optquick,'Y')
     end
     pd = 'Type "0" when finished adding contour lines. Type "1" to begin. [0]:';
     anspd = input(pd);
+    numA = 0;
     while anspd ~= 0 % same type of loop as deleting and adding
         quickR = getrect; % select contour 
-        [rN,cN] = size(coNest);
-        for i = 1:cN
-            [rt,ct] = size(coNest{1,i});
-            for j = 1:ct
-                xCoord = coNest{1,i}(:,j);
-                yCoord = coNest{2,i}(:,j);
-                xCoord(isnan(xCoord)) = [];
-                yCoord(isnan(yCoord)) = [];
-                if ((xCoord > quickR(1)) & (xCoord < (quickR(1)+quickR(3)))) & ((yCoord > quickR(2)) & (yCoord < (quickR(2)+quickR(4)))) % Test each plot to see if it falls within rectangle.
-                    defCoordsX = [defCoordsX, coNest{1,i}(:,j)];
-                    defCoordsY = [defCoordsY, coNest{2,i}(:,j)];
-                    addX = [addX, coNest{1,i}(:,j)];
-                    addY = [addY, coNest{2,i}(:,j)];
-                end
+        for i = 1:c2
+            xCoord = xdataC(:,i);
+            yCoord = ydataC(:,i);
+            xCoord(isnan(xCoord)) = [];
+            yCoord(isnan(yCoord)) = [];
+            if ((xCoord > quickR(1)) & (xCoord < (quickR(1)+quickR(3)))) & ((yCoord > quickR(2)) & (yCoord < (quickR(2)+quickR(4)))) % Test each plot to see if it falls within rectangle.
+                addX = [addX, xdataC(:,i)];
+                addY = [addY, ydataC(:,i)];
             end
         end
-        [maxvec] = max(addX);
-        [maxval,idxval] = max(maxvec);
-        xi = addX(:,idxval); % add the largest contour within the rectangle
-        yi = addY(:,idxval);
-        xi(isnan(xi)) = [];
-        yi(isnan(yi)) = [];
-        plot(xi,yi,'Color','cyan');
-        drawnow
-        hold on
+        if ~isempty(addX)
+            [maxvec] = max(addX);
+            [maxval,idxval] = max(maxvec);
+            xi = addX(:,idxval); % add the largest contour within the rectangle
+            yi = addY(:,idxval);
+            defCoordsX = [defCoordsX, xi];
+            defCoordsY = [defCoordsY, yi];
+            plot(xi,yi,'Color','cyan');
+            drawnow
+            hold on
+            numA = numA + 1;
+        end
         pd = 'Type "0" when finished adding plots. [0]:';
         anspd = input(pd);
     end 
+    addSpec = 'Number of contours added: %d\n';
+    fprintf(fileID,addSpec,numA);
     hold off  
 end
 

@@ -21,6 +21,9 @@
 
 function [ defCoordsX, defCoordsY, defCount] = IdentifyDefects(Method,ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
 
+global metaDataFile
+fileID = fopen(metaDataFile,'a+');
+
 if strcmp(Method,'Filters')
     [defCoordsX,defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix);
 elseif strcmp(Method, 'Shape')
@@ -32,3 +35,6 @@ hold on
 plot(defCoordsX,defCoordsY,'Color','yellow');
 
 defCount = numel(findobj(gcf,'Type','line')); % counts all the plotted defects in the image
+
+formatSpec = 'Number of identified defects: %d\n';
+fprintf(fileID,formatSpec,defCount);

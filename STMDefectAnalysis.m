@@ -50,6 +50,16 @@
 
 function [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec] = STMDefectAnalysis( ImRaw, nmWidth )
 
+% check if user has necessary toolbox
+hasIPT = license('test', 'image_toolbox');  
+if ~hasIPT % image processing toolbox not installed
+	message = sprintf('Sorry, but you do not seem to have the Image Processing Toolbox.\nDo you want to try to continue anyway?');
+	reply = questdlg(message, 'Toolbox missing', 'Yes', 'No', 'Yes');
+	if strcmpi(reply, 'No')
+		return;
+	end
+end
+
 [filepath,name,ext] = fileparts(ImRaw); % reads the file
 
 % create .txt file containing all the operations on the image from start to

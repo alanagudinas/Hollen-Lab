@@ -40,6 +40,8 @@ formatSpec = '%s\n';
 fprintf(fileID,formatSpec,'Contour data generated');
 
 [rU,cU] = size(ImUniBg);
+addDatX = [];
+addDatY = [];
 figure; imshow(ImUniBg,[]);
 hold on
 plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]) % Plot all the contour lines in the image.
@@ -247,7 +249,7 @@ if strcmp(psout,'N')
     definput = {'Y'};
     ps1out = inputdlg(ps1,titleBox,dims,definput);
     ps1out = ps1out{1};
-    if strcmp(ps1out,'N')
+    if strcmp(ps1out,'N') % need more branches here
         psa = 'Are there defects that should be removed? (Y/N)';
         titleBox = 'Defect Removal';
         dims = [1 60];
@@ -278,12 +280,16 @@ if strcmp(psout,'N')
                 % different lengths
                 defAddX = zeros(750,100);
                 defAddY = zeros(750,100);
+                addDatX = zeros(750,200); 
+                addDatY = zeros(750,200); 
                 k = 1;
                 while anspd ~=0
                     rectAdd = getrect;
                     [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
                     [rx,cx] = size(AddX);
                     numA = numA + cx;
+                    addDatX(1:rx,numA:numA+cx-1) = AddX;
+                    addDatY(1:rx,numA:numA+cx-1) = AddY;
                     for i = 1:cx
                         defAddX(1:rx,k) = AddX(:,i);
                         defAddY(1:rx,k) = AddY(:,i);
@@ -358,8 +364,82 @@ if strcmp(psout,'N')
             end 
             delSpec = 'Number of contours deleted: %d\n';
             fprintf(fileID, delSpec,numD);
-            defCoordsX = xld;
-            defCoordsY = yld;
+            
+            psd = 'Are there defects that should be added? (Y/N)';
+            titleBox = 'Defect Addition';
+            dims = [1 60];
+            definput = {'Y'};
+            psout2 = inputdlg(psd,titleBox,dims,definput);
+            psout2 = psout2{1};
+            if strcmp(psout2,'N')
+                defCoordsX = xld;
+                defCoordsY = yld;
+            elseif strcmp(psout2,'Y')
+                if help_dlg
+                    adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
+                    helpadd = helpdlg(adds,'Defect Addition');
+                    waitfor(helpadd);
+                end
+                pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
+                anspd = input(pd);
+                defCoordsX = [];
+                defCoordsY = [];
+                [r2,c2] = size(xFilt);
+                numA = 0;
+                % this is really not generalized enough but I don't know of
+                % a better way as of right now, since all the vectors have
+                % different lengths
+                defAddX = zeros(750,100);
+                defAddY = zeros(750,100);
+                addDatX = zeros(750,200); 
+                addDatY = zeros(750,200); 
+                k = 1;
+                while anspd ~=0
+                    rectAdd = getrect;
+                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                    [rx,cx] = size(AddX);
+                    numA = numA + cx;
+                    addDatX(1:rx,numA:numA+cx-1) = AddX;
+                    addDatY(1:rx,numA:numA+cx-1) = AddY;
+                    for i = 1:cx
+                        defAddX(1:rx,k) = AddX(:,i);
+                        defAddY(1:rx,k) = AddY(:,i);
+                        k = k + 1;
+                    end
+                    [r1,c1] = size(defAddX);
+                    if r1 > r2
+                        defCoordsX = zeros(r1,c1+c2);
+                        defCoordsY = zeros(r1,c1+c2);
+                    elseif r1 < r2
+                        defCoordsX = zeros(r2,c1+c2);
+                        defCoordsY = zeros(r2,c1+c2);
+                    end
+                    for j = 1:c1
+                        defCoordsX(1:r1,j) = defAddX(:,j);
+                        defCoordsY(1:r1,j) = defAddY(:,j);
+                    end
+                    for z = 1:c2
+                        defCoordsX(1:r2,k+c1) = xFilt(:,z);
+                        defCoordsY(1:r2,k+c1) = yFilt(:,z);
+                    end
+                    defCoordsX( ~any(defCoordsX,2), : ) = [];  
+                    defCoordsX( :, ~any(defCoordsX,1) ) = []; 
+                    defCoordsY( ~any(defCoordsY,2), : ) = [];  
+                    defCoordsY( :, ~any(defCoordsY,1) ) = []; 
+                    defCoordsX(defCoordsX == 0) = NaN;
+                    defCoordsY(defCoordsY == 0) = NaN;  
+
+                    figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                    hold on
+                    plot(defCoordsX,defCoordsY,'Color','cyan');
+                    hold off
+                    
+                    pd = 'Type "0" when finished adding defects. [0]:';
+                    anspd = input(pd);
+                end
+                addSpec = 'Number of contours added: %d\n';
+                fprintf(fileID, addSpec, numA);
+            end
         end            
     elseif strcmp(ps1out,'Y')
         close all
@@ -592,6 +672,8 @@ if ~isempty(xFilt2)
                 defCoordsY = [];
                 defAddX = zeros(750,100); % FIX THIS!!!!!
                 defAddY = zeros(750,100);
+                addDatX = zeros(750,200); 
+                addDatY = zeros(750,200); 
                 [r2,c2] = size(defX);
                 k = 1;
                 numA = 0;
@@ -600,6 +682,8 @@ if ~isempty(xFilt2)
                     [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
                     [rx,cx] = size(AddX);
                     numA = numA + cx;
+                    addDatX(1:rx,numA:numA+cx-1) = AddX;
+                    addDatY(1:rx,numA:numA+cx-1) = AddY;
                     for i = 1:cx
                         defAddX(1:rx,k) = AddX(:,i);
                         defAddY(1:rx,k) = AddY(:,i);
@@ -694,12 +778,16 @@ if ~isempty(xFilt2)
                 defCoordsX = [];
                 defCoordsY = [];
                 [r2,c2] = size(xld);
+                addDatX = zeros(750,200); 
+                addDatY = zeros(750,200); 
                 numA = 0;
                 while anspd ~= 0
                     rectAdd = getrect;
                     [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
                     [rx,cx] = size(AddX);
                     numA = numA + cx;
+                    addDatX(1:rx,numA:numA+cx-1) = AddX;
+                    addDatY(1:rx,numA:numA+cx-1) = AddY;
                     for i = 1:cx
                         defAddX(1:rx,k) = AddX(:,i);
                         defAddY(1:rx,k) = AddY(:,i);
@@ -772,7 +860,6 @@ elseif strcmp(optquick,'Y')
     figure; imshow(ImLineFlat,[]);
     hold on
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
-    plot(xdataC,ydataC,'Color','yellow');
     hold off
     [r1,c1] = size(defCoordsX);
     [r2,c2] = size(xdataC);
@@ -821,6 +908,8 @@ elseif strcmp(optquick,'Y')
             defCoordsY = [defCoordsY, ytarg];
             plot(xtarg,ytarg,'Color','cyan');
             numA = numA + 1;
+            addDatX(1:rx,cA+numA) = xtarg;
+            addDatY(1:rx,cA+numA) = ytarg;
         end
         pd = 'Type "0" when finished adding plots. [0]:';
         anspd = input(pd);
@@ -830,11 +919,28 @@ elseif strcmp(optquick,'Y')
     hold off
 end
 
+if ~isempty(addDatX)
+    addDatX( ~any(addDatX,2), : ) = [];  
+    addDatX( :, ~any(addDatX,1) ) = []; 
+    addDatY( ~any(addDatY,2), : ) = [];  
+    addDatY( :, ~any(addDatY,1) ) = []; 
+    addDatX(addDatX == 0) = NaN;
+    addDatY(addDatY == 0) = NaN;  
+end
+
 defCoordsX( ~any(defCoordsX,2), : ) = [];  
 defCoordsX( :, ~any(defCoordsX,1) ) = []; 
 defCoordsY( ~any(defCoordsY,2), : ) = [];  
 defCoordsY( :, ~any(defCoordsY,1) ) = []; 
 defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN; 
+
+close all
+figure; imshow(ImFlatSmooth,[]);
+hold on
+plot(defCoordsX,defCoordsY,'Color','cyan');
+plot(addDatX,addDatY,'Color','magenta');
+legend('Automatically Identified','Manually Identified','Location','northwest');
+hold off
 
 end

@@ -19,6 +19,10 @@
 function [ defAddX, defAddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectData)
 
 global help_dlg
+global metaDataFile
+
+fileID = fopen(metaDataFile,'a+'); % open txt file
+formatSpec = '%s\n';
     
 ImSectBg = imcrop(ImUniBg,rectData); % crop image w/ coordinates of rectData
 

@@ -113,13 +113,13 @@ if strcmp(vh,'V')
     end
 elseif strcmp(vh,'H')
      for i = 1:nx
-        defY = defCoordsY(:,i);
-        defY(isnan(defY)) = [];
-        if ~isempty(defY)
+        defX = defCoordsX(:,i);
+        defX(isnan(defX)) = [];
+        if ~isempty(defX)
             [x(2),xIdx(2)] = max(defX); % Find the max and min y value of each contour.
             [x(1),xIdx(1)] = min(defX);
-            y(2) = defCoordsX(xIdx(2),i);
-            y(1) = defCoordsX(xIdx(1),i);
+            y(2) = defCoordsY(xIdx(2),i);
+            y(1) = defCoordsY(xIdx(1),i);
             c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
             maxHeightVec(i) = max(c);
             meanHeightVec(i) = mean(c);

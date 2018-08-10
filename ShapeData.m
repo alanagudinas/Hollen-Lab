@@ -31,6 +31,8 @@ fileID = fopen(metaDataFile,'a+'); % open txt file
 formatSpec = '%s\n';
 
 [rU,cU] = size(ImUniBg);
+addDatX = [];
+addDatY = [];
 
 [NestedContoursCell, xdataC, ydataC] = NestedContours(ImUniBg,meanPix); % generate cell array of contour groups 
 
@@ -125,6 +127,7 @@ elseif strcmp(optionfilt,'Yes')
         h2 = helpdlg(shapehelp2,'Template Selection');
         waitfor(h2);
     end
+    
     
     rect = getrect; % select another region for final template selection, since multiple contours will often be displayed
 
@@ -361,7 +364,9 @@ elseif strcmp(option1,'No')
                 % don't know of a more generalized way to do this, but
                 % alter the size of defAddX and Y if need be..
                 defAddX = zeros(750,100); % since all the added contours will be different lengths, need to set empty matrix. Not the best way.
-                defAddY = zeros(750,100);
+                defAddY = zeros(750,100); 
+                addDatX = zeros(750,200); 
+                addDatY = zeros(750,200); 
                 k = 1;
                 numA = 0;
                 while anspd ~= 0 
@@ -369,6 +374,8 @@ elseif strcmp(option1,'No')
                     [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd); % rectangle coordinates are inputted
                     [rx,cx] = size(AddX);
                     numA = numA + cx;
+                    addDatX(1:rx,numA:numA+cx-1) = AddX;
+                    addDatY(1:rx,numA:numA+cx-1) = AddY;
                     for i = 1:cx
                         defAddX(1:rx,k) = AddX(:,i); % add new defect coordinates to matrix
                         defAddY(1:rx,k) = AddY(:,i);
@@ -428,6 +435,8 @@ elseif strcmp(option1,'No')
         defCoordsY = [];
         defAddX = zeros(750,100);
         defAddY = zeros(750,100);
+        addDatX = zeros(750,200); 
+        addDatY = zeros(750,200); 
         k = 1;
         numA = 0;
         while anspd ~= 0 
@@ -435,6 +444,8 @@ elseif strcmp(option1,'No')
             [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
             [rx,cx] = size(AddX);
             numA = numA + cx;
+            addDatX(1:rx,numA:numA+cx-1) = AddX;
+            addDatY(1:rx,numA:numA+cx-1) = AddY;
             for i = 1:cx
                 defAddX(1:rx,k) = AddX(:,i);
                 defAddY(1:rx,k) = AddY(:,i);
@@ -567,6 +578,7 @@ elseif strcmp(optquick,'Y')
     pd = 'Type "0" when finished adding contour lines. Type "1" to begin. [0]:';
     anspd = input(pd);
     numA = 0;
+    [rA,cA] = size(addDatX);
     while anspd ~= 0 % same type of loop as deleting and adding
         quickR = getrect; % select contour 
         for i = 1:c2
@@ -586,10 +598,14 @@ elseif strcmp(optquick,'Y')
             yi = addY(:,idxval);
             defCoordsX = [defCoordsX, xi];
             defCoordsY = [defCoordsY, yi];
+            rx = length(xi);
+            cx = 1;
             plot(xi,yi,'Color','cyan');
             drawnow
             hold on
             numA = numA + 1;
+            addDatX(1:rx,cA+numA) = xi;
+            addDatY(1:rx,cA+numA) = yi;
         end
         pd = 'Type "0" when finished adding plots. [0]:';
         anspd = input(pd);
@@ -599,6 +615,14 @@ elseif strcmp(optquick,'Y')
     hold off  
 end
 
+if ~isempty(addDatX)
+    addDatX( ~any(addDatX,2), : ) = [];  
+    addDatX( :, ~any(addDatX,1) ) = []; 
+    addDatY( ~any(addDatY,2), : ) = [];  
+    addDatY( :, ~any(addDatY,1) ) = []; 
+    addDatX(addDatX == 0) = NaN;
+    addDatY(addDatY == 0) = NaN;  
+end
 
 defCoordsX( ~any(defCoordsX,2), : ) = [];  
 defCoordsX( :, ~any(defCoordsX,1) ) = []; 
@@ -606,6 +630,14 @@ defCoordsY( ~any(defCoordsY,2), : ) = [];
 defCoordsY( :, ~any(defCoordsY,1) ) = []; 
 defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN;  
+
+close all
+figure; imshow(ImFlatSmooth,[]);
+hold on
+plot(defCoordsX,defCoordsY,'Color','cyan');
+plot(addDatX,addDatY,'Color','magenta');
+legend('Automatically Identified','Manually Identified','Location','northwest');
+hold off
 
 % Done!
 

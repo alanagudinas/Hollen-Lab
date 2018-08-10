@@ -1,12 +1,11 @@
 # Hollen-Lab
+--
 This is an image analysis toolbox in MATLAB for statistical analysis of defects in STM images.
-
+--
 Your starting point should be either a .sm4 file or .mat structure. If you have an image file (.png or .jpg) that has not been converted to a .mat file, you can run the following: 
 
--------
 MyImage = imread('myImageFile.png');
 save('MyImage.mat','MyImage');
--------
 
 'MyImage.mat' is your new starting point. If you are not starting with a .sm4 file, you will need to provide the width of the image in nanometers. 
 

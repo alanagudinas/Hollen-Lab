@@ -2,7 +2,13 @@
 
 This is an image processing toolbox in MATLAB for statistical analysis of defects in STM images.
 -
-Your starting point should be either a .sm4 file or .mat structure. If you have an image file (.png or .jpg) that has not been converted to a .mat file, you can run the following: 
+Brief User Guide:
+-
+Before using this program, you should make sure to have Oliver Van Kaick's "Contour Correspondence via Ant Colony Optimization" file installed. You can access it here: https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization.
+
+From the "aco" folder, you should immediately run the function "set_global."
+
+After installing the folder, your starting point should be either a .sm4 file or .mat structure. If you have an image file (.png or .jpg) that has not been converted to a .mat file, you can run the following: 
 
 MyImage = imread('myImageFile.png');
 save('MyImage.mat','MyImage');
@@ -11,11 +17,11 @@ save('MyImage.mat','MyImage');
 
 To use the toolbox, start by running "GlobalVar." Set the global variable "output_graph" to "1" if you want graphical outputs and figures containing the processed images. Set the global variable "help_dlg" to "1" if you would like pop-up help boxes to guide you through the toolbox.
 
-After running "GlobalVar", run the toolbox from MATLAB's command line by typing:
+After running "GlobalVar", run the program from MATLAB's command line by typing:
 
 [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
 
-Where ImRaw is either the .sm4 or .mat file. You don't need an argument for "nmWidth" if you're starting with a .sm4 file.
+where ImRaw is either the .sm4 or .mat file. You don't need an argument for "nmWidth" if you're starting with a .sm4 file.
 
 "DefCoordsX/Y" are the coordinates of the identified defects in your input image. "DefCount" is the number of defects. "max/meanHeightVec" are vectors containing the maximum and average apparent heights, respectively, of all the defects. "AreaVec" is a vector containing the area of all the defects. "ImFlatSmooth" is the processed image. 
 

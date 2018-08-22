@@ -25,9 +25,9 @@ where ImRaw is either the .sm4 or .mat file. You don't need an argument for "nmW
 
 "DefCoordsX/Y" are the coordinates of the identified defects in your input image. "DefCount" is the number of defects. "max/meanHeightVec" are vectors containing the maximum and average apparent heights, respectively, of all the defects. "AreaVec" is a vector containing the area of all the defects. "ImFlatSmooth" is the processed image. 
 
-"STMDefectAnalysis" will walk you through the toolbox. After the image is processed, you will be asked to choose an image to use in analysis. If the results of "UniformBackground" eliminate too many details, type "3" to use "ImFlatSmooth," the output of "ImageProcess." The prompt will ask: 'Which image would you like to include for analysis? Please enter "1" to select the first image, and "2" to select the second. Enter "3" to analyze the processed image.'
+"STMDefectAnalysis" will walk you through the toolbox. After the image is processed, a figure will appear with two images side by side, which are the outputs of "UniformBackground." You will be asked to choose an image to use in analysis. If both images have eliminated too many details from the processed image, type "3" to use "ImFlatSmooth" instead, the output of "ImageProcess." The prompt will ask: 'Which image would you like to include for analysis? Please enter "1" to select the first image, and "2" to select the second. Enter "3" to analyze the processed image.'
 
-Next, you will be asked to type "S" or "F" for defect identification, and "B" or "D" for the brightness level of the defects you're interested in.
+Next, you will be asked to type "S" or "F" for defect identification, and "B" or "D" for the brightness level of the defects you're interested in. Entering "S" will allow you to identify defects via shape-matching with a template defect, and entering "F" will allow you to identify defects via filters.
 
 In both "ShapeData" and "FilterData", you will be prompted to specify filters for the contour data. After entering the filter values, a figure will appear with contour plots on it. Use your mouse to select a rectangle surrounding a contour plot of interest.
 

@@ -46,9 +46,9 @@
 % defect
 % areaVec: a vector of the area (to scale) of each defect, based on the
 % contour plot
-%------------------------------------------------------------------------------------%
 
-function [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec] = STMDefectAnalysis( ImRaw, nmWidth )
+
+function [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
 
 % check if user has necessary toolbox
 hasIPT = license('test', 'image_toolbox');  
@@ -72,7 +72,8 @@ edit(metaDataFile);
 
 fileID = fopen(metaDataFile,'a+');
 formatSpec = '%s\n';
-fprintf(fileID,formatSpec,'Text file created.');
+t = datetime('now','TimeZone','local','Format','d-MMM-y HH:mm:ss Z');
+fprintf(fileID,formatSpec,t);
     
 if strcmp(ext,'.sm4') 
     ImID = fopen(ImRaw); % open if an .sm4 file

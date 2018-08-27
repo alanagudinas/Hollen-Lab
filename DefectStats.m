@@ -19,7 +19,6 @@
 % contour plot
 % centData: an array of the coordinates of the centroid of each defect
 % contour
-%------------------------------------------------------------------------------------%
 
 function [maxHeightVec,meanHeightVec,areaVec,centData] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
 
@@ -57,8 +56,8 @@ for i = 1:nx
         defArea(i) = bwarea(imBi); % Compute area of any white pixels in binary image.
         s = regionprops(imBi,'Centroid'); % Find coordinates of center of defect.
         centRef = cat(1, s.Centroid);
-        centData(i,1) = centRef(1);
-        centData(i,2) = centRef(2);
+        centData(i,1) = centRef(:,1);
+        centData(i,2) = centRef(:,2);
     end
 end
 
@@ -72,7 +71,6 @@ ImLine = ImLine + abs(min(min(ImLine))); % In case of negative brightness values
 minlim = min(min(ImLine));
 maxlim = max(max(ImLine)); % For rescaling image.
 
-close all
 
 if output_graph
     figure;imshow(ImLine); title('Line Flattened Image Data');

@@ -1,16 +1,15 @@
 % Author: Alana Gudinas
 % 8 August 2018
 %
-% [ bestcost ] = ShapeSimilarity( defCoordsX, defCoordsY ) 
-% 
-% The purpose of this function is to generate a vector of the best_cost
-% value between a target shape and all the identified defects in an image. 
+% bestcost = ShapeSimilarity(defCoordsX, defCoordsY, ImFlatSmooth) generates a vector
+% of the best_cost value between a target shape and all the identified 
+% defects in an image. 
 %
-% The inputs must be the coordinates of the defects, and the output is a
-% vector containing a similarity value associated with each defect.
-% The user must select a target defect shape.
+% The inputs must be the coordinates of the defects and a processed STM 
+% image, and the output is a vector containing a similarity value 
+% associated with each defect. The user must select a target defect shape.
 %
-%-------------------------------------------------------------------------%
+% defCoordsX/Y and ImFlatSmooth must be matrices. 
 
 function [ bestcost ] = ShapeSimilarity( defCoordsX, defCoordsY, ImFlatSmooth ) 
 

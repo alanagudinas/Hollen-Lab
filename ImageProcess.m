@@ -12,8 +12,6 @@
 % The outputs are:
 % ImFlatSmooth: the final processed image
 % ImLineFlat: the line-by-line flattened image
-%
-%------------------------------------------------------------------------------------%
 
 function [ImFlatSmooth,ImLineFlat] = ImageProcess(ImData)
 

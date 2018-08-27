@@ -19,8 +19,6 @@
 %
 % This function allows the user to decide at various moments whether to
 % manually add or delete defect contours from the image.
-%
-%------------------------------------------------------------------------------------%
 
 function [ defCoordsX, defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
 
@@ -65,7 +63,7 @@ optionfilt = inputdlg(promptfilt,titleBox,dims,definput);
 optionfilt = optionfilt{1};
 
 if strcmp(optionfilt,'No')
-    [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC);
+    [defCoordsX, defCoordsY,bestvec] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC);
     fprintf(fileID,formatSpec,'Shape matching completed');
 elseif strcmp(optionfilt,'Yes')
     if help_dlg
@@ -129,10 +127,9 @@ elseif strcmp(optionfilt,'Yes')
     end
     
     
-    rect = getrect; % select another region for final template selection, since multiple contours will often be displayed
-
-    close all
+    % rect = getrect; % select another region for final template selection, since multiple contours will often be displayed
     
+    [x,y] = ginput(1);
     xCoord = []; % just to be safe, reset variables
     yCoord = [];
     xi = [];
@@ -151,7 +148,7 @@ elseif strcmp(optionfilt,'Yes')
             yCoord = coNest{2,j}(:,i);
             xCoord(isnan(xCoord)) = [];
             yCoord(isnan(yCoord)) = [];
-            if ((xCoord > rect(1)) & (xCoord < (rect(1)+rect(3)))) & ((yCoord > rect(2)) & (yCoord < (rect(2)+rect(4))))
+            if ((x < max(xCoord)) & (x > min(xCoord))) & ((y < max(yCoord)) & (y > min(yCoord)))
                 xRef(:,k) = coNest{1,j}(:,i);
                 yRef(:,k) = coNest{2,j}(:,i);
                 k = k + 1;
@@ -165,7 +162,7 @@ elseif strcmp(optionfilt,'Yes')
     xi(isnan(xi)) = [];
     yi(isnan(yi)) = [];
     plot(xi,yi,'Color','cyan');
- 
+
     FilteredNest = NestedContoursCell; % set new variable that will be filtered according to previous specs
     
     ImBWRef = poly2mask(xi,yi,rU,cU); % create binary image from target coordinates
@@ -256,7 +253,7 @@ elseif strcmp(optionfilt,'Yes')
             hold on
         end
     end
-    [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, FilteredNest, xFilt, yFilt); % shove coordinates into shape matching program
+    [defCoordsX, defCoordsY,bestvec] = NestedShapeMatching(ImUniBg, FilteredNest, xFilt, yFilt); % shove coordinates into shape matching program
     fprintf(fileID,formatSpec,'Shape matching completed');
 end
     
@@ -267,6 +264,31 @@ hold off
 figure; imshow(ImLineFlat,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','yellow');
+hold off
+
+figure; histogram(bestvec); title('Best Cost Histogram');
+prompt1 = 'Would you like to filter the results based on shape similarity? Y/N';
+titleBox = 'Best Cost Filter';
+dims = [1 75];
+definput = {'N'};
+optb = inputdlg(prompt1,titleBox,dims,definput);
+optb = optb{1};
+
+if strcmp(optb,'Y')
+    [x,y] = ginput(1);
+    for i = 1:length(bestvec)
+        if bestvec(i) > x
+            defCoordsX(:,i) = NaN;
+            defCoordsY(:,i) = NaN;
+            bestvec(i) = NaN;
+        end
+    end
+end
+close all
+
+figure; imshow(ImFlatSmooth,[]);
+hold on
+plot(defCoordsX,defCoordsY,'Color','cyan');
 hold off
 
 prompt1 = 'Are all the defects in the image correctly identified? (Yes/No)';
@@ -314,13 +336,13 @@ elseif strcmp(option1,'No')
             pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:'; % input from command line
             anspd = input(pd);
             while anspd ~= 0
-                rectld = getrect; % user draws rectangle on image of defects
+                [x,y] = ginput(1); % user draws rectangle on image of defects
                 for j = 1:length(defCoordsX(1,:))
                     xbn = defCoordsX(:,j);
                     ybn = defCoordsY(:,j);
                     xbn(isnan(xbn)) = [];
                     ybn(isnan(ybn)) = [];
-                    if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
+                    if ((x < max(xbn)) & (x > min(xbn))) & ((y < max(ybn)) & (y > min(ybn)))
                         xCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1); % if the coordinate is inside rectangle, we don't want it any more
                         yCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1);
                         close all
@@ -504,13 +526,13 @@ elseif strcmp(option1,'No')
             anspd = input(pd);
             numD = 0;
             while anspd ~= 0
-                rectld = getrect;
+                [x,y] = ginput(1);
                 for j = 1:length(defCoordsX(1,:))
                     xbn = defCoordsX(:,j);
                     ybn = defCoordsY(:,j);
                     xbn(isnan(xbn)) = [];
                     ybn(isnan(ybn)) = [];
-                    if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
+                    if ((x < max(xbn)) & (x > min(xbn))) & ((y < max(ybn)) & (y > min(ybn)))
                         xCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1);
                         yCoordDel(:,j) = NaN(length(xCoordDel(:,1)),1);
                         close all
@@ -560,6 +582,7 @@ elseif strcmp(optquick,'Y')
     addY = [];
     figure; imshow(ImLineFlat,[]);
     hold on
+    plot(xdataC,ydataC,'Color','magenta');
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
     [r1,c1] = size(defCoordsX);
     [r2,c2] = size(xdataC);
@@ -634,7 +657,7 @@ defCoordsY(defCoordsY == 0) = NaN;
 close all
 figure; imshow(ImFlatSmooth,[]);
 hold on
-plot(defCoordsX,defCoordsY,'Color','cyan');
+plot(defCoordsX,defCoordsY,'Color','cyan')
 plot(addDatX,addDatY,'Color','magenta');
 legend('Automatically Identified','Manually Identified','Location','northwest');
 hold off

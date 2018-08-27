@@ -13,8 +13,7 @@
 % coordinates of a rectangular region of the original image. The outputs are
 % the x and y coordinates of the identified defects, after a change of
 % coordinates to plot them in the correct region on the original image.
-%
-%------------------------------------------------------------------------------------%
+
 
 function [ defAddX, defAddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectData)
 
@@ -118,7 +117,8 @@ if strcmp(smallans,'S')
         helps3 = helpdlg(hs3,'Final Selection');
         waitfor(helps3);
     end
-
+    defAddX = [];
+    defAddY = [];
     rect = getrect; % of plotted contours, choose what should be identified as a defect
 
     for i = 1:length(defCoordsX(1,:))
@@ -131,7 +131,7 @@ if strcmp(smallans,'S')
             defAddY(:,i) = defCoordsY(:,i);
         end
     end
-
+    
     if isempty(defAddX)
         stri = 'Please select a region containing an entire contour plot!';
         hels = helpdlg(stri,'Last Try');
@@ -150,6 +150,9 @@ if strcmp(smallans,'S')
         defAddX = defAddX + rectData(1); % change of coordinates to plot contour on original image
         defAddY = defAddY + rectData(2);
     end
+    
+    defAddX = defAddX + rectData(1); % change of coordinates to plot contour on original image
+    defAddY = defAddY + rectData(2);
     
 elseif strcmp(smallans,'M')
     figure; imshow(ImSect,[]);

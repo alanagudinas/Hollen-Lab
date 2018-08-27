@@ -14,10 +14,9 @@
 % data.
 % The outputs are (defCoordsX/Y) the coordinates of the defect plots resulting
 % from the shape matching.
-%------------------------------------------------------------------------------------%
 
 
-function [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
+function [defCoordsX, defCoordsY, bestvec] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
 
 global hMethod
 global help_dlg
@@ -29,6 +28,8 @@ if hMethod
 else
     idxN = [nx:-1:1];
 end
+
+bestvec = [];
 
 figure; imshow(ImUniBg,[]); title('Defect that will be used in shape-matching comparison');
 hold on
@@ -66,7 +67,9 @@ if help_dlg
     waitfor(h2);
 end
 
-rect = getrect; % Prompt user to select which line they are interested in. 
+% rect = getrect; % Prompt user to select which line they are interested in. 
+
+[x,y] = ginput(1);
 
 close all
 
@@ -78,7 +81,7 @@ for k = idxN
     yint = ydataC(:,k);
     xint(isnan(xint)) = [];
     yint(isnan(yint)) = [];
-    if ((xint > rect(1)) & (xint < (rect(1)+rect(3)))) & ((yint > rect(2)) & (yint < (rect(2)+rect(4)))) % Test each plot to see if it falls within rectangle.
+    if ((x < max(xint)) & (x > min(xint))) & ((y < max(yint)) & (y > min(yint)))
         xi = xint;
         yi = yint;
         plot(xi,yi,'Color','cyan') % Plot template on image so user can see their selection. 
@@ -141,12 +144,13 @@ for j = 1:cN
             bestcost = [bestcost, best_cost]; % create vector of "best cost" for each shape within one nest
         end
     end
-    [minB,idxB] = min(bestcost); % the lowest cost indicates the best matching shape 
+    [minB,idxB] = nanmin(bestcost); % the lowest cost indicates the best matching shape 
     plot(coNest{1,j}(:,idxB),coNest{2,j}(:,idxB),'Color','magenta'); % plot the shape that best matches the template
     drawnow
     defCoordsX = [defCoordsX, coNest{1,j}(:,idxB)]; % add coordinates to output
     defCoordsY = [defCoordsY, coNest{2,j}(:,idxB)];
     bestcost = []; % reset
+    bestvec = [bestvec, minB];
 end
 hold off
 

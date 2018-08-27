@@ -22,9 +22,6 @@
 %
 % This function allows the user to decide at various moments whether to
 % manually add or delete defect contours from the image.
-% 
-%------------------------------------------------------------------------------------%
-
 
 function [ defCoordsX, defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
 
@@ -211,7 +208,6 @@ for i = 1:length(xdataC(1,:))
     end
 end
 
-
 figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
 hold on
 plot(xFilt,yFilt,'Color','yellow')
@@ -249,202 +245,179 @@ if strcmp(psout,'N')
     definput = {'Y'};
     ps1out = inputdlg(ps1,titleBox,dims,definput);
     ps1out = ps1out{1};
-    if strcmp(ps1out,'N') % need more branches here
-        psa = 'Are there defects that should be removed? (Y/N)';
-        titleBox = 'Defect Removal';
+    if strcmp(ps1out,'N')
+        psd = 'Are there defects that should be added? (Y/N)';
+        titleBox = 'Defect Addition';
         dims = [1 60];
         definput = {'Y'};
-        psouta = inputdlg(psa,titleBox,dims,definput);
-        psouta = psouta{1};
-        if strcmp(psouta,'N')
-            psd = 'Are there defects that should be added? (Y/N)';
-            titleBox = 'Defect Addition';
+        psoutd = inputdlg(psd,titleBox,dims,definput);
+        psoutd = psoutd{1};
+        if strcmp(psoutd,'N')
+            psa = 'Are there defects that should be removed? (Y/N)';
+            titleBox = 'Defect Removal';
             dims = [1 60];
             definput = {'Y'};
-            psoutd = inputdlg(psd,titleBox,dims,definput);
-            psoutd = psoutd{1};
-            if strcmp(psoutd,'Y')
-                if help_dlg
-                    adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
-                    helpadd = helpdlg(adds,'Defect Addition');
-                    waitfor(helpadd);
-                end
-                pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
+            psouta = inputdlg(psa,titleBox,dims,definput);
+            psouta = psouta{1};
+            if strcmp(psouta,'Y')
+                xld = xFilt;
+                yld = yFilt;
+                pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
                 anspd = input(pd);
-                defCoordsX = [];
-                defCoordsY = [];
-                [r2,c2] = size(xFilt);
-                numA = 0;
-                % this is really not generalized enough but I don't know of
-                % a better way as of right now, since all the vectors have
-                % different lengths
-                defAddX = zeros(750,100);
-                defAddY = zeros(750,100);
-                addDatX = zeros(750,200); 
-                addDatY = zeros(750,200); 
-                k = 1;
-                while anspd ~=0
-                    rectAdd = getrect;
-                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
-                    [rx,cx] = size(AddX);
-                    numA = numA + cx;
-                    addDatX(1:rx,numA:numA+cx-1) = AddX;
-                    addDatY(1:rx,numA:numA+cx-1) = AddY;
-                    for i = 1:cx
-                        defAddX(1:rx,k) = AddX(:,i);
-                        defAddY(1:rx,k) = AddY(:,i);
-                        k = k + 1;
+                numD = 0;
+                while anspd ~= 0
+                    rectld = getrect;
+                    for j = 1:length(xFilt(1,:)) % needs to be resized
+                        xbn = xFilt(:,j);
+                        ybn = yFilt(:,j);
+                        xbn(isnan(xbn)) = [];
+                        ybn(isnan(ybn)) = [];
+                        if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
+                            xld(:,j) = NaN(length(xld(:,1)),1);
+                            yld(:,j) = NaN(length(xld(:,1)),1);
+                            close all
+                            figure; imshow(ImUniBg,[]);
+                            hold on
+                            plot(xld,yld,'Color','yellow')
+                            hold off
+                            numD = numD + 1;
+                        end
                     end
-                    [r1,c1] = size(defAddX);
-                    if r1 > r2
-                        defCoordsX = zeros(r1,c1+c2);
-                        defCoordsY = zeros(r1,c1+c2);
-                    elseif r1 < r2
-                        defCoordsX = zeros(r2,c1+c2);
-                        defCoordsY = zeros(r2,c1+c2);
-                    end
-                    for j = 1:c1
-                        defCoordsX(1:r1,j) = defAddX(:,j);
-                        defCoordsY(1:r1,j) = defAddY(:,j);
-                    end
-                    for z = 1:c2
-                        defCoordsX(1:r2,k+c1) = xFilt(:,z);
-                        defCoordsY(1:r2,k+c1) = yFilt(:,z);
-                    end
-                    defCoordsX( ~any(defCoordsX,2), : ) = [];  
-                    defCoordsX( :, ~any(defCoordsX,1) ) = []; 
-                    defCoordsY( ~any(defCoordsY,2), : ) = [];  
-                    defCoordsY( :, ~any(defCoordsY,1) ) = []; 
-                    defCoordsX(defCoordsX == 0) = NaN;
-                    defCoordsY(defCoordsY == 0) = NaN;  
-
-                    figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
-                    hold on
-                    plot(defCoordsX,defCoordsY,'Color','cyan');
-                    hold off
-                    
-                    pd = 'Type "0" when finished adding defects. [0]:';
+                    pd = 'Type "0" when finished removing defects. [0]:';
                     anspd = input(pd);
-                end
-                addSpec = 'Number of contours added: %d\n';
-                fprintf(fileID, addSpec, numA);
-                
-            elseif strcmp(psoutd,'N')
+                end 
+                delSpec = 'Number of contours deleted: %d\n';
+                fprintf(fileID, delSpec,numD);
+                defCoordsX = xld;
+                defCoordsY = yld;
+            elseif strcmp(psouta,'N')
                 m1 = msgbox('Then what is all the fuss about?!','Confused');
                 waitfor(m1);
                 defCoordsX = xFilt;
                 defCoordsY = yFilt;
             end
-        elseif strcmp(psouta,'Y')
-            xld = xFilt;
-            yld = yFilt;
-            pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
+        elseif strcmp(psoutd,'Y')
+            figure; imshow(ImFlatSmooth,[]);
+            hold on
+            plot(xFilt,yFilt,'Color','cyan');
+            hold off
+            if help_dlg
+                adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
+                helpadd = helpdlg(adds,'Defect Addition');
+                waitfor(helpadd);
+            end
+            pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
             anspd = input(pd);
-            numD = 0;
-            while anspd ~= 0
-                rectld = getrect;
-                for j = 1:length(xFilt(1,:)) % needs to be resized
-                    xbn = xFilt(:,j);
-                    ybn = yFilt(:,j);
-                    xbn(isnan(xbn)) = [];
-                    ybn(isnan(ybn)) = [];
-                    if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
-                        xld(:,j) = NaN(length(xld(:,1)),1);
-                        yld(:,j) = NaN(length(xld(:,1)),1);
-                        close all
-                        figure; imshow(ImUniBg,[]);
-                        hold on
-                        plot(xld,yld,'Color','yellow')
-                        hold off
-                        numD = numD + 1;
-                    end
+            defCoordsX = [];
+            defCoordsY = [];
+            [r2,c2] = size(xFilt);
+            numA = 0;
+            % this is really not generalized enough but I don't know of
+            % a better way as of right now, since all the vectors have
+            % different lengths
+            defAddX = zeros(750,100);
+            defAddY = zeros(750,100);
+            addDatX = zeros(750,200); 
+            addDatY = zeros(750,200); 
+            k = 1;
+            while anspd ~=0
+                rectAdd = getrect;
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [rx,cx] = size(AddX);
+                numA = numA + cx;
+                addDatX(1:rx,numA:numA+cx-1) = AddX;
+                addDatY(1:rx,numA:numA+cx-1) = AddY;
+                for i = 1:cx
+                    defAddX(1:rx,k) = AddX(:,i);
+                    defAddY(1:rx,k) = AddY(:,i);
+                    k = k + 1;
                 end
-                pd = 'Type "0" when finished removing defects. [0]:';
+                [r1,c1] = size(defAddX);
+                if r1 > r2
+                    defCoordsX = zeros(r1,c1+c2);
+                    defCoordsY = zeros(r1,c1+c2);
+                elseif r1 < r2
+                    defCoordsX = zeros(r2,c1+c2);
+                    defCoordsY = zeros(r2,c1+c2);
+                end
+                for j = 1:c1
+                    defCoordsX(1:r1,j) = defAddX(:,j);
+                    defCoordsY(1:r1,j) = defAddY(:,j);
+                end
+                for z = 1:c2
+                    defCoordsX(1:r2,z+c1) = xFilt(:,z);
+                    defCoordsY(1:r2,z+c1) = yFilt(:,z);
+                end
+                defCoordsX( ~any(defCoordsX,2), : ) = [];  
+                defCoordsX( :, ~any(defCoordsX,1) ) = []; 
+                defCoordsY( ~any(defCoordsY,2), : ) = [];  
+                defCoordsY( :, ~any(defCoordsY,1) ) = []; 
+                defCoordsX(defCoordsX == 0) = NaN;
+                defCoordsY(defCoordsY == 0) = NaN;  
+
+                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                hold on
+                plot(defCoordsX,defCoordsY,'Color','cyan');
+                hold off
+
+                pd = 'Type "0" when finished adding defects. [0]:';
                 anspd = input(pd);
-            end 
-            delSpec = 'Number of contours deleted: %d\n';
-            fprintf(fileID, delSpec,numD);
+            end
+            addSpec = 'Number of contours added: %d\n';
+            fprintf(fileID, addSpec, numA);
             
-            psd = 'Are there defects that should be added? (Y/N)';
-            titleBox = 'Defect Addition';
+            psa = 'Are there defects that should be removed? (Y/N)';
+            titleBox = 'Defect Removal';
             dims = [1 60];
             definput = {'Y'};
-            psout2 = inputdlg(psd,titleBox,dims,definput);
-            psout2 = psout2{1};
-            if strcmp(psout2,'N')
-                defCoordsX = xld;
-                defCoordsY = yld;
-            elseif strcmp(psout2,'Y')
-                if help_dlg
-                    adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
-                    helpadd = helpdlg(adds,'Defect Addition');
-                    waitfor(helpadd);
-                end
-                pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
+            psouta2 = inputdlg(psa,titleBox,dims,definput);
+            psouta2 = psouta2{1};
+            if strcmp(psouta2,'N')
+                defCoordsX;
+                defCoordsY;
+            elseif strcmp(psouta2,'Y')
+                close all
+                xld = defCoordsX;
+                yld = defCoordsY;
+                figure; imshow(ImFlatSmooth,[]);
+                hold on
+                plot(xld,yld,'Color','yellow')
+                pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
                 anspd = input(pd);
-                defCoordsX = [];
-                defCoordsY = [];
-                [r2,c2] = size(xFilt);
-                numA = 0;
-                % this is really not generalized enough but I don't know of
-                % a better way as of right now, since all the vectors have
-                % different lengths
-                defAddX = zeros(750,100);
-                defAddY = zeros(750,100);
-                addDatX = zeros(750,200); 
-                addDatY = zeros(750,200); 
-                k = 1;
-                while anspd ~=0
-                    rectAdd = getrect;
-                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
-                    [rx,cx] = size(AddX);
-                    numA = numA + cx;
-                    addDatX(1:rx,numA:numA+cx-1) = AddX;
-                    addDatY(1:rx,numA:numA+cx-1) = AddY;
-                    for i = 1:cx
-                        defAddX(1:rx,k) = AddX(:,i);
-                        defAddY(1:rx,k) = AddY(:,i);
-                        k = k + 1;
+                numD = 0;
+                while anspd ~= 0
+                    [x,y] = ginput(1);
+                    for j = 1:length(defCoordsX(1,:)) % needs to be resized
+                        xbn = defCoordsX(:,j);
+                        ybn = defCoordsY(:,j);
+                        xbn(isnan(xbn)) = [];
+                        ybn(isnan(ybn)) = [];
+                        if ((x < max(xbn)) & (x > min(xbn))) & ((y < max(ybn)) & (y > min(ybn)))
+                            xld(:,j) = NaN;
+                            yld(:,j) = NaN;
+                            close all
+                            figure; imshow(ImFlatSmooth,[]);
+                            hold on
+                            plot(xld,yld,'Color','yellow')
+                            hold off
+                            numD = numD + 1;
+                        end
                     end
-                    [r1,c1] = size(defAddX);
-                    if r1 > r2
-                        defCoordsX = zeros(r1,c1+c2);
-                        defCoordsY = zeros(r1,c1+c2);
-                    elseif r1 < r2
-                        defCoordsX = zeros(r2,c1+c2);
-                        defCoordsY = zeros(r2,c1+c2);
-                    end
-                    for j = 1:c1
-                        defCoordsX(1:r1,j) = defAddX(:,j);
-                        defCoordsY(1:r1,j) = defAddY(:,j);
-                    end
-                    for z = 1:c2
-                        defCoordsX(1:r2,k+c1) = xFilt(:,z);
-                        defCoordsY(1:r2,k+c1) = yFilt(:,z);
-                    end
-                    defCoordsX( ~any(defCoordsX,2), : ) = [];  
-                    defCoordsX( :, ~any(defCoordsX,1) ) = []; 
-                    defCoordsY( ~any(defCoordsY,2), : ) = [];  
-                    defCoordsY( :, ~any(defCoordsY,1) ) = []; 
-                    defCoordsX(defCoordsX == 0) = NaN;
-                    defCoordsY(defCoordsY == 0) = NaN;  
-
-                    figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
-                    hold on
-                    plot(defCoordsX,defCoordsY,'Color','cyan');
-                    hold off
-                    
-                    pd = 'Type "0" when finished adding defects. [0]:';
+                    pd = 'Type "0" when finished removing defects. [0]:';
                     anspd = input(pd);
                 end
-                addSpec = 'Number of contours added: %d\n';
-                fprintf(fileID, addSpec, numA);
+                delSpec = 'Number of contours deleted: %d\n';
+                fprintf(fileID, delSpec,numD);
+                defCoordsX = xld;
+                defCoordsY = yld;
             end
-        end            
+        end  
     elseif strcmp(ps1out,'Y')
         close all
         figure;imshow(ImLineFlat,[]);
-        figure; imshow(ImUniBg,[]); title('Unidentified Contour Lines','FontSize',15);
+        figure; imshow(ImUniBg,[]); title('Unidentified Contour Lines (Green)','FontSize',15);
+        hold on
+        plot(xFilt,yFilt,'Color','cyan');
         hold on
         plot(xB,yB,'Color','green');
         hold off
@@ -493,7 +466,6 @@ if strcmp(psout,'N')
                 end  
             end
         end
-
         for i = 1:length(xi(1,:))
             xint = xi(:,i);
             yint = yi(:,i);
@@ -592,7 +564,7 @@ if strcmp(psout,'N')
             end
         end
 
-        figure; imshow(ImUniBg,[]); % may want to compare with original image here?
+        figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
         hold on
         plot(xFilt2,yFilt2,'Color','yellow')
         hold off
@@ -642,190 +614,164 @@ if ~isempty(xFilt2)
     definput = {'Y'};
     filt2 = inputdlg(promptfilt2,titleBox,dims,definput);
     filt2 = filt2{1};
-    
     if strcmp(filt2,'Y')
         defCoordsX = defX;
         defCoordsY = defY;
     elseif strcmp(filt2,'N')
-        psa = 'Are there defects that should be removed?';
-        titleBox = 'Defect Removal';
+        psd = 'Are there defects that should be added?';
+        titleBox = 'Defect Addition';
         dims = [1 60];
         definput = {'Y'};
-        psouta = inputdlg(psa,titleBox,dims,definput);
-        psouta = psouta{1};
-        if strcmp(psouta,'N')
-            psd = 'Are there defects that should be added?';
-            titleBox = 'Defect Addition';
+        psoutd = inputdlg(psd,titleBox,dims,definput);
+        psoutd = psoutd{1};
+        if strcmp(psoutd,'N')
+            psa = 'Are there defects that should be removed?';
+            titleBox = 'Defect Removal';
             dims = [1 60];
             definput = {'Y'};
-            psoutd = inputdlg(psd,titleBox,dims,definput);
-            psoutd = psoutd{1};
-            if strcmp(psoutd,'Y')
-                if help_dlg
-                    adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
-                    helpadd = helpdlg(adds,'Defect Addition');
-                    waitfor(helpadd);
-                end
-                pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
-                anspd = input(pd);
-                defCoordsX = [];
-                defCoordsY = [];
-                defAddX = zeros(750,100); % FIX THIS!!!!!
-                defAddY = zeros(750,100);
-                addDatX = zeros(750,200); 
-                addDatY = zeros(750,200); 
-                [r2,c2] = size(defX);
-                k = 1;
-                numA = 0;
-                while anspd ~=0
-                    rectAdd = getrect;
-                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
-                    [rx,cx] = size(AddX);
-                    numA = numA + cx;
-                    addDatX(1:rx,numA:numA+cx-1) = AddX;
-                    addDatY(1:rx,numA:numA+cx-1) = AddY;
-                    for i = 1:cx
-                        defAddX(1:rx,k) = AddX(:,i);
-                        defAddY(1:rx,k) = AddY(:,i);
-                        k = k + 1;
-                    end
-                    [r1,c1] = size(defAddX);
-                    if r1 > r2
-                        defCoordsX = zeros(r1,c1+c2);
-                        defCoordsY = zeros(r1,c1+c2);
-                    elseif r1 < r2
-                        defCoordsX = zeros(r2,c1+c2);
-                        defCoordsY = zeros(r2,c1+c2);
-                    end
-                    for j = 1:c1
-                        defCoordsX(1:r1,j) = defAddX(:,j);
-                        defCoordsY(1:r1,j) = defAddY(:,j);
-                    end
-                    for z = 1:c2
-                        defCoordsX(1:r2,k+c1) = defX(:,z);
-                        defCoordsY(1:r2,k+c1) = defY(:,z);
-                    end
-                    defCoordsX( ~any(defCoordsX,2), : ) = [];  
-                    defCoordsX( :, ~any(defCoordsX,1) ) = []; 
-                    defCoordsY( ~any(defCoordsY,2), : ) = [];  
-                    defCoordsY( :, ~any(defCoordsY,1) ) = []; 
-                    defCoordsX(defCoordsX == 0) = NaN;
-                    defCoordsY(defCoordsY == 0) = NaN;  
-
-                    figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
-                    hold on
-                    plot(defCoordsX,defCoordsY,'Color','cyan');
-                    hold off
-                    
-                    pd = 'Type "0" when finished adding defects. [0]:';
-                    anspd = input(pd);
-                end
-                addSpec = 'Number of contours added: %d\n';
-                fprintf(fileID,addSpec,numA);
-            elseif strcmp(psoutd,'N')
+            psouta = inputdlg(psa,titleBox,dims,definput);
+            psouta = psouta{1};
+            if strcmp(psouta,'N')
                 m1 = msgbox('Then what is all the fuss about?!','Confused');
                 waitfor(m1);
                 defCoordsX = defX;
                 defCoordsY = defY;
-            end
-        elseif strcmp(psouta,'Y')
-            figure;imshow(ImUniBg,[]);
-            xld = defX;
-            yld = defY;
-            pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
-            anspd = input(pd);
-            numD = 0;
-            while anspd ~= 0
-                rectld = getrect;
-                for j = 1:length(defX(1,:)) % needs to be resized
-                    xbn = defX(:,j);
-                    ybn = defY(:,j);
-                    xbn(isnan(xbn)) = [];
-                    ybn(isnan(ybn)) = [];
-                    if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
-                        close
-                        xld(:,j) = NaN(length(xld(:,1)),1);
-                        yld(:,j) = NaN(length(xld(:,1)),1);
-                        figure; imshow(ImUniBg,[]);
-                        hold on
-                        plot(xld,yld,'Color','yellow')
-                        hold off
-                        numD = numD + 1;
-                    end
-                end
-                pd = 'Type "0" when finished removing defects. [0]:';
+            elseif strcmp(psouta,'Y')
+                figure;imshow(ImUniBg,[]);
+                xld = defX;
+                yld = defY;
+                pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
                 anspd = input(pd);
-            end 
-            delSpec = 'Number of contours deleted: %d\n';
-            fprintf(fileID, delSpec,numD);
-            promptadd = 'Are there any defects you wish to add? Y/N';
-            titleBox = 'Defect Addition';
-            definput = {'Y'};
+                numD = 0;
+                while anspd ~= 0
+                    rectld = getrect;
+                    for j = 1:length(defX(1,:)) % needs to be resized
+                        xbn = defX(:,j);
+                        ybn = defY(:,j);
+                        xbn(isnan(xbn)) = [];
+                        ybn(isnan(ybn)) = [];
+                        if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
+                            close
+                            xld(:,j) = NaN(length(xld(:,1)),1);
+                            yld(:,j) = NaN(length(xld(:,1)),1);
+                            figure; imshow(ImUniBg,[]);
+                            hold on
+                            plot(xld,yld,'Color','yellow')
+                            hold off
+                            numD = numD + 1;
+                        end
+                    end
+                    pd = 'Type "0" when finished removing defects. [0]:';
+                    anspd = input(pd);
+                end 
+                delSpec = 'Number of contours deleted: %d\n';
+                fprintf(fileID, delSpec,numD);
+            end
+        elseif strcmp(psoutd,'Y')
+            if help_dlg
+                adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
+                helpadd = helpdlg(adds,'Defect Addition');
+                waitfor(helpadd);
+            end
+            pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
+            anspd = input(pd);
+            defCoordsX = [];
+            defCoordsY = [];
+            defAddX = zeros(750,100); % FIX THIS!!!!!
+            defAddY = zeros(750,100);
+            addDatX = zeros(750,200); 
+            addDatY = zeros(750,200); 
+            [r2,c2] = size(defX);
+            k = 1;
+            numA = 0;
+            while anspd ~=0
+                rectAdd = getrect;
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [rx,cx] = size(AddX);
+                numA = numA + cx;
+                addDatX(1:rx,numA:numA+cx-1) = AddX;
+                addDatY(1:rx,numA:numA+cx-1) = AddY;
+                for i = 1:cx
+                    defAddX(1:rx,k) = AddX(:,i);
+                    defAddY(1:rx,k) = AddY(:,i);
+                    k = k + 1;
+                end
+                [r1,c1] = size(defAddX);
+                if r1 > r2
+                    defCoordsX = zeros(r1,c1+c2);
+                    defCoordsY = zeros(r1,c1+c2);
+                elseif r1 < r2
+                    defCoordsX = zeros(r2,c1+c2);
+                    defCoordsY = zeros(r2,c1+c2);
+                end
+                for j = 1:c1
+                    defCoordsX(1:r1,j) = defAddX(:,j);
+                    defCoordsY(1:r1,j) = defAddY(:,j);
+                end
+                for z = 1:c2
+                    defCoordsX(1:r2,z+c1) = defX(:,z);
+                    defCoordsY(1:r2,z+c1) = defY(:,z);
+                end
+                defCoordsX( ~any(defCoordsX,2), : ) = [];  
+                defCoordsX( :, ~any(defCoordsX,1) ) = []; 
+                defCoordsY( ~any(defCoordsY,2), : ) = [];  
+                defCoordsY( :, ~any(defCoordsY,1) ) = []; 
+                defCoordsX(defCoordsX == 0) = NaN;
+                defCoordsY(defCoordsY == 0) = NaN;  
+                
+                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                hold on
+                plot(defCoordsX,defCoordsY,'Color','cyan');
+                hold off
+                pd = 'Type "0" when finished adding defects. [0]:';
+                anspd = input(pd);
+            end
+            addSpec = 'Number of contours added: %d\n';
+            fprintf(fileID,addSpec,numA);
+            psa = 'Are there defects that should be removed?';
+            titleBox = 'Defect Removal';
             dims = [1 60];
-            addans = inputdlg(promptadd,titleBox,dims,definput);
-            addans = addans{1};
-            if strcmp(addans,'N')
+            definput = {'Y'};
+            psouta2 = inputdlg(psa,titleBox,dims,definput);
+            psouta2 = psouta2{1};
+            if strcmp(psouta2,'N')
+                defCoordsX;
+                defCoordsY;
+            elseif strcmp(psouta2,'Y')
+                figure;imshow(ImFlatSmooth,[]);
+                hold on
+                plot(defCoordsX,defCoordsY,'Color','yellow')
+                hold off
+                xld = defCoordsX;
+                yld = defCoordsY;
+                pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
+                anspd = input(pd);
+                numD = 0;
+                while anspd ~= 0
+                    rectld = getrect;
+                    for j = 1:length(defCoordsX(1,:)) % needs to be resized
+                        xbn = defCoordsX(:,j);
+                        ybn = defCoordsY(:,j);
+                        xbn(isnan(xbn)) = [];
+                        ybn(isnan(ybn)) = [];
+                        if ((xbn > rectld(1)) & (xbn < (rectld(1)+rectld(3)))) & ((ybn > rectld(2)) & (ybn < (rectld(2)+rectld(4)))) % Test each plot to see if it falls within rectangle.
+                            close
+                            xld(:,j) = NaN(length(xld(:,1)),1);
+                            yld(:,j) = NaN(length(xld(:,1)),1);
+                            figure; imshow(ImUniBg,[]);
+                            hold on
+                            plot(xld,yld,'Color','yellow')
+                            hold off
+                            numD = numD + 1;
+                        end
+                    end
+                    pd = 'Type "0" when finished removing defects. [0]:';
+                    anspd = input(pd);
+                end 
+                delSpec = 'Number of contours deleted: %d\n';
+                fprintf(fileID, delSpec,numD);
                 defCoordsX = xld;
                 defCoordsY = yld;
-            elseif strcmp(addans,'Y')
-                if help_dlg
-                    adds = 'Please select a region containg a defect that shold be re-analyzed.';
-                    helpadd = helpdlg(adds,'Defect Addition');
-                    waitfor(helpadd);
-                end
-                pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
-                anspd = input(pd);
-                defCoordsX = [];
-                defCoordsY = [];
-                [r2,c2] = size(xld);
-                addDatX = zeros(750,200); 
-                addDatY = zeros(750,200); 
-                numA = 0;
-                while anspd ~= 0
-                    rectAdd = getrect;
-                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
-                    [rx,cx] = size(AddX);
-                    numA = numA + cx;
-                    addDatX(1:rx,numA:numA+cx-1) = AddX;
-                    addDatY(1:rx,numA:numA+cx-1) = AddY;
-                    for i = 1:cx
-                        defAddX(1:rx,k) = AddX(:,i);
-                        defAddY(1:rx,k) = AddY(:,i);
-                        k = k + 1;
-                    end
-                    [r1,c1] = size(defAddX);
-                    if r1 > r2
-                        defCoordsX = zeros(r1,c1+c2);
-                        defCoordsY = zeros(r1,c1+c2);
-                    elseif r1 < r2
-                        defCoordsX = zeros(r2,c1+c2);
-                        defCoordsY = zeros(r2,c1+c2);
-                    end
-                    for j = 1:c1
-                        defCoordsX(1:r1,j) = defAddX(:,j);
-                        defCoordsY(1:r1,j) = defAddY(:,j);
-                    end
-                    for z = 1:c2
-                        defCoordsX(1:r2,k+c1) = xld(:,z);
-                        defCoordsY(1:r2,k+c1) = xld(:,z);
-                    end
-                    defCoordsX( ~any(defCoordsX,2), : ) = [];  
-                    defCoordsX( :, ~any(defCoordsX,1) ) = []; 
-                    defCoordsY( ~any(defCoordsY,2), : ) = [];  
-                    defCoordsY( :, ~any(defCoordsY,1) ) = []; 
-                    defCoordsX(defCoordsX == 0) = NaN;
-                    defCoordsY(defCoordsY == 0) = NaN;  
-
-                    figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
-                    hold on
-                    plot(defCoordsX,defCoordsY,'Color','cyan');
-                    hold off
-                    
-                    pd = 'Type "0" when finished adding defects. [0]:';
-                    anspd = input(pd);
-                end  
-               addSpec = 'Number of contours added: %d\n';
-               fprintf(fileID,addSpec,numA);
             end
         end
     end
@@ -857,8 +803,9 @@ if strcmp(optquick,'N')
 elseif strcmp(optquick,'Y')
     addX = [];
     addY = [];
-    figure; imshow(ImLineFlat,[]);
+    figure; imshow(ImLineFlat,[]);title('Unidentified contour lines plotted in magenta');
     hold on
+    plot(xdataC,ydataC,'Color','magenta');
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
     hold off
     [r1,c1] = size(defCoordsX);
@@ -906,7 +853,7 @@ elseif strcmp(optquick,'Y')
             ytarg = addY(:,idm);
             defCoordsX = [defCoordsX, xtarg];
             defCoordsY = [defCoordsY, ytarg];
-            plot(xtarg,ytarg,'Color','cyan');
+            plot(xtarg,ytarg,'Color',[173/255;255/255;47/255]);
             numA = numA + 1;
             addDatX(1:rx,cA+numA) = xtarg;
             addDatY(1:rx,cA+numA) = ytarg;

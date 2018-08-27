@@ -1,26 +1,29 @@
 % Author: Alana Gudinas
 % July 6, 2018
 %
-% function [ ImUniBg ] = UniformBackground(Im_proc)
-%
-% The purpose of this function is to reduce the amount of noise in an STM
-% image to make further analysis simple.
+% [ImUniBg, ImUniBgINIT, meanPix1, meanPix2] = UniformBackground(Im_proc)
+% reduces the amount of noise in a STM image to make further analysis 
+% simple by increasing background uniformity. The function makes some
+% statistical computations on the pixels in the image, and determines a
+% brightness range that can be considered the background of the image. If a
+% pixel falls within that range, it is set to the mean pixel value of the
+% image.
 %
 % Im_proc is a processed image, which can be created from a raw STM image
 % using "ImageProcess."
-% ImUniBg is the image with a more uniform background, where extrema are
-% easier to distinguish, both optically and computationally.
+% ImUniBg is the result of the second iteration, an image with a more 
+% uniform background, where extrema are easier to distinguish, both 
+% optically and computationally. ImUniBgINIT is the result of the first
+% iteration. meanPix1 is the background pixel value from the first
+% iteration, and meanPix2 is the background pixel value from the second
+% iteration.
 %
-% This function basically smooths the background by finding the mean pixel
-% brightness in an image and setting all pixels within a "reasonable" range
-% of the mean pixel to the mean value, therefore "averaging out" most
-% noise. It iterates twice over the same image. 
-%------------------------------------------------------------------------------------%
+% Im_proc must be an image matrix.
 
 function [ ImUniBg, ImUniBgINIT, meanPix1, meanPix2 ] = UniformBackground(Im_proc)
 
 global metaDataFile
-fileID = fopen(metaDataFile,'a+'); % open txt file
+fileID = fopen(metaDataFile,'a+'); % open meta data .txt file
 formatSpec = '%s\n';
 
 ImData = Im_proc;
@@ -41,7 +44,7 @@ pixDiff = [];
 nd = length(ImReVec);
 
 for i = 1:nd-1
-    pixDiff(i) = abs(ImReVec(i+1) - ImReVec(i));
+    pixDiff(i) = abs(ImReVec(i+1) - ImReVec(i)); % subtract the brightness of one pixel from its linear neighbor
 end
 
 maxDiff = max(pixDiff);
@@ -107,11 +110,6 @@ fprintf(fileID,formatSpec,'New image generated with improved background uniformi
 %   2. Use above pixel-by-pixel strategy to identify defects.
 %       - trouble will occur here in images where a dark extreme isn't a
 %         defect.
-% Still need to characterize types of defects, unless I am able to identify
-% extremes of every image...even then, how do I differentiate what is a
-% defect or not, should I implement crude shape matching? (would only work
-% with images without 'streaked' defects)
-%
 % Decided to repeat above process first to improve uniformity results.
 % Below, the "t" subscript at the end of every variable just marks that it
 % is the second iteration.

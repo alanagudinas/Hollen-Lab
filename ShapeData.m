@@ -486,9 +486,9 @@ elseif strcmp(option1,'No')
                 defCoordsY(1:r1,j) = defAddY(:,j);
             end
 
-            for k = 1:c2
-                defCoordsX(1:r2,k+c1) = xInt(:,k);
-                defCoordsY(1:r2,k+c1) = yInt(:,k);
+            for n = 1:c2
+                defCoordsX(1:r2,n+c1) = xInt(:,n);
+                defCoordsY(1:r2,n+c1) = yInt(:,n);
             end
             defCoordsX( ~any(defCoordsX,2), : ) = [];  
             defCoordsX( :, ~any(defCoordsX,1) ) = []; 
@@ -522,6 +522,8 @@ elseif strcmp(option1,'No')
             end
             xCoordDel = defCoordsX;
             yCoordDel = defCoordsY;
+            xAddDel = addDatX;
+            yAddDel = addDatY;
             pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
             anspd = input(pd);
             numD = 0;
@@ -543,6 +545,16 @@ elseif strcmp(option1,'No')
                         numD = numD + 1;
                     end
                 end
+                for i = 1:length(addDatX(1,:))
+                    xan = addDatX(:,i);
+                    yan = addDatY(:,i);                    
+                    xan(isnan(xan)) = [];
+                    yan(isnan(yan)) = [];
+                    if ((x < max(xan)) & (x > min(xan))) & ((y < max(yan)) & (y > min(yan)))
+                        xAddDel(:,j) = NaN(length(xAddDel(:,1)),1); % it needs to only take smallest area %%%%%%%%%
+                        yAddDel(:,j) = NaN(length(yAddDel(:,1)),1);
+                    end
+                end
                 pd = 'Type "0" when finished removing defects. [0]:';
                 anspd = input(pd);
             end 
@@ -551,6 +563,8 @@ elseif strcmp(option1,'No')
             hold off
             defCoordsX = xCoordDel;
             defCoordsY = yCoordDel;
+            addDatX = xAddDel;
+            addDatY = yAddDel;
         end
     end
 end
@@ -659,7 +673,6 @@ figure; imshow(ImFlatSmooth,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan')
 plot(addDatX,addDatY,'Color','magenta');
-legend('Automatically Identified','Manually Identified','Location','northwest');
 hold off
 
 % Done!

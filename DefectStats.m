@@ -1,7 +1,7 @@
 % Author: Alana Gudinas
 % 31 July 2018
 %
-% [appHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
+% [appHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth) 
 %
 % This function outputs statistical information about the defects in an STM
 % image. The inputs are: (defCoords) the x and y coordinates of the defects, 
@@ -20,7 +20,9 @@
 % centData: an array of the coordinates of the centroid of each defect
 % contour
 
-function [maxHeightVec,meanHeightVec,areaVec,centData] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth) 
+function [maxHeightVec,meanHeightVec,areaVec,centData,regProps] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth) 
+
+%%%%%%%you need to include dark defects as well%%%%%%%%%
 
 global help_dlg
 global output_graph
@@ -40,26 +42,80 @@ end
 
 [rI,cI] = size(ImFlatSmooth);
 
-nx = length(defCoordsX(1,:));
-defArea = zeros(nx,1); % Create empty vector to store the area data.
-centData = zeros(nx,2);
-xInt = defCoordsX;
-yInt = defCoordsY;
+ImBW = zeros(rI,cI);
+defX = defCoordsX;
+defY = defCoordsY;
+nx = length(defX(1,:));
+defArea = [];
 
-for i = 1:nx
-    xInt = defCoordsX(:,i);
-    yInt = defCoordsY(:,i);
-    xInt(isnan(xInt)) = [];
-    yInt(isnan(yInt)) = [];
-    if ~isempty(xInt)
-        imBi = poly2mask(xInt,yInt,rI,cI); % Creates binary image from contour coordinates.
-        defArea(i) = bwarea(imBi); % Compute area of any white pixels in binary image.
-        s = regionprops(imBi,'Centroid'); % Find coordinates of center of defect.
-        centRef = cat(1, s.Centroid);
-        centData(i,1) = centRef(:,1);
-        centData(i,2) = centRef(:,2);
+for i = 1:nx    
+    xi = defX(:,i);
+    yi = defY(:,i);
+    xi(isnan(xi)) = [];
+    yi(isnan(yi)) = [];
+    Im_binR = poly2mask(xi,yi,rI,cI); % Im_binR is a binary image containing only the selected defect in white.
+    defArea(i) = bwarea(Im_binR);
+    ImBW = imfuse(ImBW,Im_binR);
+end
+
+ImBW = rgb2gray(ImBW);
+ImBW = imbinarize(ImBW);
+
+s = regionprops(ImBW,'Centroid','Eccentricity','MajorAxisLength','MinorAxisLength','Orientation'); % Find coordinates of center of defect.
+centData = cat(1, s.Centroid);
+
+if output_graph
+    imshow(ImBW,[]);
+    hold on
+end
+
+xMat = [];
+yMat = [];
+
+%------------------
+% the following is from Steve Eddins: https://blogs.mathworks.com/steve/2010/07/30/visualizing-regionprops-ellipse-measurements/
+phi = linspace(0,2*pi,50);
+cosphi = cos(phi);
+sinphi = sin(phi);
+
+for k = 1:length(s)
+    xbar = s(k).Centroid(1);
+    ybar = s(k).Centroid(2);
+
+    a = s(k).MajorAxisLength/2;
+    b = s(k).MinorAxisLength/2;
+
+    theta = pi*s(k).Orientation/180;
+    R = [ cos(theta)   sin(theta)
+         -sin(theta)   cos(theta)];
+
+    xy = [a*cosphi; b*sinphi];
+    xy = R*xy;
+
+    x = xy(1,:) + xbar;
+    y = xy(2,:) + ybar;
+
+    thetaT = -theta;
+    xuM = xbar + a*cos(thetaT);
+    xbM = xbar - a*cos(thetaT);
+    yuM = ybar + a*sin(thetaT);
+    ybM = ybar - a*sin(thetaT);
+    xM = [xuM, xbM];
+    yM = [yuM, ybM];
+    
+    xMat(1,k) = xbM-7;
+    xMat(2,k) = xuM+7;
+    yMat(1,k) = ybM-7;
+    yMat(2,k) = yuM+7;
+    
+    if output_graph
+        plot(x,y,'r','LineWidth',2);
+        hold on
+        plot(xM,yM,'Color','blue')
     end
 end
+%------------------
+hold off
 
 % Next, compute apparent height statistics.
 % Start by rescaling the line-flattened image to recover original pixel
@@ -71,66 +127,39 @@ ImLine = ImLine + abs(min(min(ImLine))); % In case of negative brightness values
 minlim = min(min(ImLine));
 maxlim = max(max(ImLine)); % For rescaling image.
 
+maxHeightVec = zeros(length(s),1); % Empty variables for apparent height stats.
+meanHeightVec = zeros(length(s),1);
 
-if output_graph
-    figure;imshow(ImLine); title('Line Flattened Image Data');
-    colorbar
-    lim = caxis;
-    caxis([minlim maxlim]); % Change image scale for visualization and calculations.
-    hold on
-end
-
-maxHeightVec = zeros(nx,1); % Empty variables for apparent height stats.
-meanHeightVec = zeros(nx,1);
-
-prompt = 'Specify whether to take a vertical or horizontal cross-section of the defects for apparent height statistics: [V/H]';
-definput = {'V'};
+prompt = 'Specify whether to take a cross-section of the defects along the major or minor axis for statistical analysis.[Major/Minor]';
+definput = {'Major'};
 titleBox = 'Apparent Height Statistics';
 dims = [1 60];
 vh = inputdlg(prompt,titleBox,dims,definput);
 vh = vh{1};
 
+% figure;
+% cprofile = gca;
 
-if strcmp(vh,'V')
-    for i = 1:nx
-        defY = defCoordsY(:,i);
-        defY(isnan(defY)) = [];
-        if ~isempty(defY)
-            [y(2),yIdx(2)] = max(defY); % Find the max and min y value of each contour.
-            [y(1),yIdx(1)] = min(defY);
-            x(2) = defCoordsX(yIdx(2),i);
-            x(1) = defCoordsX(yIdx(1),i);
-            c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
-            maxHeightVec(i) = max(c);
-            meanHeightVec(i) = mean(c);
-            if output_graph
-                plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
-                hold on
-            end
-        end
+if strcmp(vh,'Major')
+    for i = 1:length(s)
+        c = improfile(ImUniBg,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+        maxHeightVec(i) = max(c);
+        meanHeightVec(i) = mean(c);
+        xprof = 1:1:length(c);
+        figure; plot(xprof,c) % this is returning a figure for every single defect--beware!!
     end
-elseif strcmp(vh,'H')
-     for i = 1:nx
-        defX = defCoordsX(:,i);
-        defX(isnan(defX)) = [];
-        if ~isempty(defX)
-            [x(2),xIdx(2)] = max(defX); % Find the max and min y value of each contour.
-            [x(1),xIdx(1)] = min(defX);
-            y(2) = defCoordsY(xIdx(2),i);
-            y(1) = defCoordsY(xIdx(1),i);
-            c = improfile(ImLine,x,y); % improfile records the brightness data along a line in the image.
-            maxHeightVec(i) = max(c);
-            meanHeightVec(i) = mean(c);
-            if output_graph
-                plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
-                hold on
-            end
-        end
-     end
+elseif strcmp(vh,'Minor')
+    %nothing yet
 end
 
 if output_graph
+    figure;imshow(ImLine); title('Line Flattened Image Data');
+    colorbar
+    clim = caxis;
+    caxis([minlim maxlim]); % Change image scale for visualization and calculations.
+    hold on
     plot(defCoordsX,defCoordsY,'Color','yellow')
+    hold off
 end
 
 maxHeightVec = maxHeightVec * 1e9; % Change units to nm, since original data is in m. 
@@ -152,7 +181,7 @@ defAreaScale = defArea/imSq;
 % For plotting purposes:
 %szV = defAreaScale .* 5;
 szV = 40;
-xrange = [1:1:nx]';
+xrange = [1:1:length(s)]';
 
 if output_graph
     figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
@@ -167,16 +196,20 @@ meanHSort = sort(meanHeightVec);
 
 if output_graph
     sz = 50;
-    figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
+    figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); %title('Defect Apparent Heights','FontSize',15);
     hold on
-    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled');
+    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled'); % this isnt plotting?
     xlabel('Index','FontSize',15);
     ylabel('Apparent Height (nm)','FontSize',15);
     legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')
+    grid on
     hold off
 end
 
 fprintf(fileID,formatSpec,'Apparent height and area vectors computed');
 areaVec = defAreaScale;
+regProps = s;
+
+%%%% option to add other line profiles
 
 end

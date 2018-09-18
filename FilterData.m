@@ -744,6 +744,8 @@ if ~isempty(xFilt2)
                 hold off
                 xld = defCoordsX;
                 yld = defCoordsY;
+                xad = addDatX;
+                yad = addDatY;
                 pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
                 anspd = input(pd);
                 numD = 0;
@@ -765,6 +767,16 @@ if ~isempty(xFilt2)
                             numD = numD + 1;
                         end
                     end
+                    for i = 1:length(addDatX)
+                        xan = addDatX(:,i);
+                        yan = addDatY(:,i);                    
+                        xan(isnan(xan)) = [];
+                        yan(isnan(yan)) = [];
+                        if ((x < max(xan)) & (x > min(xan))) & ((y < max(yan)) & (y > min(yan)))
+                            xad(:,j) = NaN(length(xad(:,1)),1);
+                            yad(:,j) = NaN(length(yad(:,1)),1);
+                        end
+                    end
                     pd = 'Type "0" when finished removing defects. [0]:';
                     anspd = input(pd);
                 end 
@@ -772,6 +784,8 @@ if ~isempty(xFilt2)
                 fprintf(fileID, delSpec,numD);
                 defCoordsX = xld;
                 defCoordsY = yld;
+                addDatX = xad;
+                addDatY = yad;
             end
         end
     end
@@ -887,7 +901,6 @@ figure; imshow(ImFlatSmooth,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 plot(addDatX,addDatY,'Color','magenta');
-legend('Automatically Identified','Manually Identified','Location','northwest');
 hold off
 
 end

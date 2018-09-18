@@ -31,6 +31,8 @@ end
 
 bestvec = [];
 
+[rU,cU] = size(ImUniBg);
+
 figure; imshow(ImUniBg,[]); title('Defect that will be used in shape-matching comparison');
 hold on
 plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]); % Plot all the contour lines in the image.
@@ -70,6 +72,11 @@ end
 % rect = getrect; % Prompt user to select which line they are interested in. 
 
 [x,y] = ginput(1);
+xint = []; % just to be safe, reset variables
+yint = [];
+xRef = [];
+yRef = [];
+k = 1; % for indexing 
 
 close all
 
@@ -82,12 +89,37 @@ for k = idxN
     xint(isnan(xint)) = [];
     yint(isnan(yint)) = [];
     if ((x < max(xint)) & (x > min(xint))) & ((y < max(yint)) & (y > min(yint)))
-        xi = xint;
-        yi = yint;
-        plot(xi,yi,'Color','cyan') % Plot template on image so user can see their selection. 
-        break
+        xRef = [xRef, xdataC(:,k)]; % matrix of all the plots "inside" the one point
+        yRef = [yRef, ydataC(:,k)];
+        k = k + 1;
     end
 end
+
+for i = 1:length(xRef(1,:))
+    xint = xRef(:,i);
+    yint = yRef(:,i);
+    xint(isnan(xint)) = [];
+    yint(isnan(yint)) = []; 
+    Im_binR = poly2mask(xint,yint,cU,rU);
+    areaVec(i) = bwarea(Im_binR); % compute the area of each contour 
+end
+
+[~,idm] = min(areaVec);
+xtarg = xRef(:,idm); % the contour with the minimum area will be chosen 
+ytarg = yRef(:,idm);
+
+xtarg(isnan(xtarg)) = [];
+ytarg(isnan(ytarg)) = [];
+
+plot(xtarg,ytarg,'Color','cyan');
+% minvec = min(xRef); % find the greatest x value in the matrix
+% [minval,idxval] = min(minvec); % find the index
+% xi = xRef(:,idxval); % find the largest plot 
+% yi = yRef(:,idxval);
+% xi(isnan(xi)) = [];
+% yi(isnan(yi)) = [];
+% plot(xi,yi,'Color','cyan');
+
 hold off
 
 if help_dlg

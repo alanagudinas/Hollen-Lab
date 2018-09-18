@@ -110,7 +110,7 @@ end
 % filter strongly along the direction of the lines to get a background you 
 % can subtract 
 
-ImlineB = imgaussfilt(Im_flat_bg,[1 50]);  
+ImlineB = imgaussfilt(Im_flat_bg,[1 50]);  % check exactly what this does 
 Ic = Im_flat_bg - ImlineB; 
 Icn = (Ic - min(min(Ic))) / (max(max(Ic)) - min(min(Ic))); 
 Imean = mean2(Icn); 
@@ -126,6 +126,7 @@ fprintf(fileID,formatSpec,'Gaussian filter applied');
 if output_graph
     figure; imshow(ImDataLineCorSmooth, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected and Smoothed'); 
 end
+
 ImFlatSmooth = ImDataLineCorSmooth; % Final processed image.
 
 end

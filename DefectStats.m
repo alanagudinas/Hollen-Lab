@@ -103,10 +103,10 @@ for k = 1:length(s)
     xM = [xuM, xbM];
     yM = [yuM, ybM];
     
-    xMat(1,k) = xbM-7;
-    xMat(2,k) = xuM+7;
-    yMat(1,k) = ybM-7;
-    yMat(2,k) = yuM+7;
+    xMat(1,k) = xbM;
+    xMat(2,k) = xuM;
+    yMat(1,k) = ybM;
+    yMat(2,k) = yuM;
     
     if output_graph
         plot(x,y,'r','LineWidth',2);
@@ -145,8 +145,8 @@ if strcmp(vh,'Major')
         c = improfile(ImUniBg,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
         maxHeightVec(i) = max(c);
         meanHeightVec(i) = mean(c);
-        xprof = 1:1:length(c);
-        figure; plot(xprof,c) % this is returning a figure for every single defect--beware!!
+        %xprof = 1:1:length(c);
+        %figure; plot(xprof,c) % this is returning a figure for every single defect--beware!!
     end
 elseif strcmp(vh,'Minor')
     %nothing yet
@@ -184,7 +184,7 @@ szV = 40;
 xrange = [1:1:length(s)]';
 
 if output_graph
-    figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
+    figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); %title('Identified Defect Areas','FontSize',15); 
     hold on
     xlabel('Index','FontSize',15);
     ylabel('Area (nm^2)','FontSize',15);
@@ -198,7 +198,7 @@ if output_graph
     sz = 50;
     figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); %title('Defect Apparent Heights','FontSize',15);
     hold on
-    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled'); % this isnt plotting?
+    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled'); 
     xlabel('Index','FontSize',15);
     ylabel('Apparent Height (nm)','FontSize',15);
     legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')

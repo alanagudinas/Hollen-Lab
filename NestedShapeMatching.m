@@ -103,7 +103,8 @@ for i = 1:length(xRef(1,:))
     Im_binR = poly2mask(xint,yint,cU,rU);
     areaVec(i) = bwarea(Im_binR); % compute the area of each contour 
 end
-
+global xtarg
+global ytarg 
 [~,idm] = min(areaVec);
 xtarg = xRef(:,idm); % the contour with the minimum area will be chosen 
 ytarg = yRef(:,idm);
@@ -111,7 +112,9 @@ ytarg = yRef(:,idm);
 xtarg(isnan(xtarg)) = [];
 ytarg(isnan(ytarg)) = [];
 
+
 plot(xtarg,ytarg,'Color','cyan');
+
 % minvec = min(xRef); % find the greatest x value in the matrix
 % [minval,idxval] = min(minvec); % find the index
 % xi = xRef(:,idxval); % find the largest plot 

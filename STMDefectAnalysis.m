@@ -1,7 +1,7 @@
 % Author: Alana Gudinas
 % July 16, 2018
 %
-% [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec] = STMDefectAnalysis( ImRaw, nmWidth )
+% [defCoordsX,defCoordsY,defStats,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
 %
 % The purpose of this function is to organize the various image processing and
 % analysis functions for user simplicity. It reads the file type of the
@@ -48,7 +48,7 @@
 % contour plot
 
 
-function [defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
+function [defCoordsX,defCoordsY,defStats,regionStats,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
 
 % check if user has necessary toolbox
 hasIPT = license('test', 'image_toolbox');  
@@ -83,13 +83,21 @@ if strcmp(ext,'.sm4')
     ImData = ImSM4.Spatial.TopoData{1}; % ImData is the topographical data of the raw image.
     figure;imshow(ImData,[]); title('Raw Image Data');
     % Process the image using Jason's tools:
-    [ImFlatSmooth,ImLineFlat] = ImageProcess(ImData);
+    [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);
 elseif strcmp(ext,'.mat')
+    ImRaw = load(ImRaw);
+    ImData = ImRaw.Spatial.TopoData{1};
+    fprintf(fileID,formatSpec,'Image file opened');
+    figure;imshow(ImData,[]); title('Raw Image Data');
+    [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);
+elseif strcmp(ext,'.png')
+    ImRaw = imread(ImRaw);
+    save('ImRaw.mat','ImRaw');
     ImData = load(ImRaw); % create new variable
     ImData = cell2mat(struct2cell(ImData)); % convert to a matrix 
     fprintf(fileID,formatSpec,'Image file opened');
     figure;imshow(ImData,[]); title('Raw Image Data');
-    [ImFlatSmooth,ImLineFlat] = ImageProcess(ImData);
+    [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);
 end
 
 if nargin == 1
@@ -104,6 +112,7 @@ close all
 % Generate an image with a more uniform background, decreasing noise for
 % further analysis:
 [ImUniBgFinal, ImUniBgInit, meanPix1, meanPix2] = UniformBackground(ImFlatSmooth);
+
 figure; imshow(ImFlatSmooth,[]); title('Processed Image');
 
 figure; imshowpair(ImUniBgInit,ImUniBgFinal,'montage'); title('(Left) Image after one uniformity iteration, (Right) Image after two iterations');  % Compare first and second iterations of UNIFORMBACKGROUND.
@@ -167,7 +176,7 @@ waitfor(mhooray);
 
 % Next step is statistical analysis.
 
-[maxHeightVec,meanHeightVec,areaVec,centData] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,nmWidth);
+[defStats,regionStats] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ);
 
 fprintf(fileID,formatSpec,'Complete');
 end

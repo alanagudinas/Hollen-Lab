@@ -93,13 +93,26 @@ mpix2 = mean(pix2);
 % fluctations. 
 
 for j = 1:numel(ImRescale)
-    if ((mpix1 - avgDiff) <= ImRescale(j)) && (ImRescale(j) <= (mpix2 + avgDiff))
+    if ((mpix1-avgDiff) <= ImRescale(j)) && (ImRescale(j) <= (mpix2+avgDiff))
         ImTest(j) = meanPixel;
     end
 end
 
+% figure; histogram(ImReVecSort);
+% hold on
+% 
+% a = mpix1 - avgDiff;
+% b = mpix2 + avgDiff;
+% 
+% line([mpix1, mpix1], [0, 6000], 'Color', 'r', 'LineWidth', 2);
+% line([mpix2, mpix2], [0, 6000], 'Color', 'r', 'LineWidth', 2);
+% 
+% line([b, b], [0, 6000], 'Color', 'b', 'LineWidth', 2);
+% line([a, a], [0, 6000], 'Color', 'b', 'LineWidth', 2);
+% 
 meanPix1 = meanPixel;
 ImUniBgINIT = ImTest;
+
 fprintf(fileID,formatSpec,'New image generated with improved background uniformity');
 % figure; imshowpair(ImData,ImTest,'montage') % very nice (so far)
 

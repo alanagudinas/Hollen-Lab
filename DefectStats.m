@@ -20,13 +20,15 @@
 % centData: an array of the coordinates of the centroid of each defect
 % contour
 
-function [maxHeightVec,meanHeightVec,areaVec,centData,regProps] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth) 
+function [defStats,regionStats] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ) 
 
 %%%%%%%you need to include dark defects as well%%%%%%%%%
 
 global help_dlg
 global output_graph
 global metaDataFile
+
+defStats = [];
 
 fileID = fopen(metaDataFile,'a+'); % open txt file
 formatSpec = '%s\n';
@@ -140,9 +142,13 @@ vh = vh{1};
 % figure;
 % cprofile = gca;
 
+[ ImUniFl, ImUniFl2] = UniformBackground(ImZ);
+
+imshow(ImUniFl,[])
+
 if strcmp(vh,'Major')
     for i = 1:length(s)
-        c = improfile(ImUniBg,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+        c = improfile(ImUniFl,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
         maxHeightVec(i) = max(c);
         meanHeightVec(i) = mean(c);
         %xprof = 1:1:length(c);
@@ -181,10 +187,11 @@ defAreaScale = defArea/imSq;
 % For plotting purposes:
 %szV = defAreaScale .* 5;
 szV = 40;
-xrange = [1:1:length(s)]';
+xrange = [1:1:length(s)];
+axrange = [1:1:length(defArea)];
 
 if output_graph
-    figure; scatter(xrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); %title('Identified Defect Areas','FontSize',15); 
+    figure; scatter(axrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); %title('Identified Defect Areas','FontSize',15); 
     hold on
     xlabel('Index','FontSize',15);
     ylabel('Area (nm^2)','FontSize',15);
@@ -208,8 +215,10 @@ end
 
 fprintf(fileID,formatSpec,'Apparent height and area vectors computed');
 areaVec = defAreaScale;
-regProps = s;
 
 %%%% option to add other line profiles
+
+regionStats = s;
+defStats = [maxHeightVec ; meanHeightVec];
 
 end

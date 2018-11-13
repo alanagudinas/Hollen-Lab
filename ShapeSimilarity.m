@@ -46,7 +46,6 @@ for i = 1:nd
     yint(isnan(yint)) = []; 
     Y2 = [xint, yint];
     [~,~, best_cost] = shape_matching(Y1,Y2, 'aco','shape_context','','chisquare');
-    best_cost
     bestcost = [bestcost, best_cost]; % add new values to vector
 end
 

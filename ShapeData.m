@@ -121,7 +121,7 @@ elseif strcmp(optionfilt,'Yes')
     hold off
     
     if help_dlg
-        shapehelp2 = 'Of the cluster of contour lines, select the shape of the defect you are interested. Be sure to completely enclose the shape of interest with the rectangle. The largest line completely inside the rectangle will be chosen as the template defect.';
+        shapehelp2 = 'Of the cluster of contour lines, click within the area enclosed by your contour of interest.';
         h2 = helpdlg(shapehelp2,'Template Selection');
         waitfor(h2);
     end

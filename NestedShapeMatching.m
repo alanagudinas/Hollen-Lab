@@ -64,7 +64,7 @@ end
 hold off
 
 if help_dlg
-    shapehelp2 = 'Of the cluster of contour lines, select the shape of the defect you are interested. Be sure to completely enclose the shape of interest with the rectangle. The largest line completely inside the rectangle will be chosen as the template defect.';
+    shapehelp2 = 'Of the cluster of contour lines, click within the area enclosed by your contour of interest.';
     h2 = helpdlg(shapehelp2,'Template Selection');
     waitfor(h2);
 end
@@ -88,7 +88,7 @@ for k = idxN
     yint = ydataC(:,k);
     xint(isnan(xint)) = [];
     yint(isnan(yint)) = [];
-    if ((x < max(xint)) & (x > min(xint))) & ((y < max(yint)) & (y > min(yint)))
+    if ((x < max(xint)) & (x > min(xint))) && ((y < max(yint)) & (y > min(yint)))
         xRef = [xRef, xdataC(:,k)]; % matrix of all the plots "inside" the one point
         yRef = [yRef, ydataC(:,k)];
         k = k + 1;

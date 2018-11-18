@@ -13,7 +13,7 @@
 % ImFlatSmooth: the final processed image
 % ImLineFlat: the line-by-line flattened image
 
-function [ImFlatSmooth,ImLineFlat] = ImageProcess(ImData)
+function [ImFlatSmooth,ImLineFlat,ImZdata] = ImageProcess(ImData)
 
 global metaDataFile
 fileID = fopen(metaDataFile,'a+'); % open txt file
@@ -21,9 +21,11 @@ formatSpec = '%s\n';
 
 [r,c,d] = size(ImData);
 
-if d > 1 % only use the first layer of the data array
-    ImData = ImData(:,:,1);
-    ImData = mat2gray(ImData);
+if d > 1 % need a 2D array for processing
+    %ImData = ImData(:,:,1);
+    ImData = rgb2gray(ImData);
+    ImData = im2double(ImData);
+    %ImData = mat2gray(ImData);
 end
 
 global output_graph
@@ -31,7 +33,7 @@ global output_graph
 Im_data = ImData;
 
 % Line-by-line flattening of the image:
-
+ 
 for n=1:length(Im_data(1,:)) 
 %create an array of x-data 
     x = 1:length(Im_data(:,n)); 
@@ -94,6 +96,10 @@ stdIm_flat_bg = std2(normIm_flat_bg);
 low = meanIm_flat_bg - stdIm_flat_bg; 
 high = meanIm_flat_bg + stdIm_flat_bg; 
 
+% ask Jason about this?
+if low < 0
+    low = 0;
+end
 % imadjust allows me to adjust the contrast on the imshowpair plotting 
 
 ImflatA = imadjust(normIm_flat, [.001 .3],[]); 
@@ -110,10 +116,10 @@ end
 % filter strongly along the direction of the lines to get a background you 
 % can subtract 
 
-ImlineB = imgaussfilt(Im_flat_bg,[1 50]);  % check exactly what this does 
+ImlineB = imgaussfilt(Im_flat_bg,[1 50]);  
 Ic = Im_flat_bg - ImlineB; 
 Icn = (Ic - min(min(Ic))) / (max(max(Ic)) - min(min(Ic))); 
-Imean = mean2(Icn); 
+Imean = mean2(Icn);
 Istd = std2(Icn); 
 
 fprintf(fileID,formatSpec,'Filtered along direction of lines');
@@ -122,6 +128,8 @@ fprintf(fileID,formatSpec,'Filtered along direction of lines');
 
 ImDataLineCorSmooth = imgaussfilt(Icn,2); 
 fprintf(fileID,formatSpec,'Gaussian filter applied');
+
+ImZdata = imgaussfilt(Ic,2); 
 
 if output_graph
     figure; imshow(ImDataLineCorSmooth, [(Imean - 5*Istd) (Imean + 5*Istd)]); title('Line Corrected and Smoothed'); 

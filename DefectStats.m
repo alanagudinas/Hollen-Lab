@@ -221,4 +221,7 @@ areaVec = defAreaScale;
 regionStats = s;
 defStats = [maxHeightVec ; meanHeightVec];
 
+% finally, re-order both sets so that they match
+
+
 end

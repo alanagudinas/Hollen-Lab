@@ -93,8 +93,13 @@ elseif strcmp(ext,'.mat')
 elseif strcmp(ext,'.png')
     ImRaw = imread(ImRaw);
     save('ImRaw.mat','ImRaw');
-    ImData = load(ImRaw); % create new variable
-    ImData = cell2mat(struct2cell(ImData)); % convert to a matrix 
+    ImData = load('ImRaw.mat'); % create new variable
+    ImData = cell2mat(struct2cell(ImData)); % convert to a matrix
+    fprintf(fileID,formatSpec,'Image file opened');
+    figure;imshow(ImData,[]); title('Raw Image Data');
+    [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);
+elseif strcmp(ext,'.asc')
+    ImData = load(ImRaw);
     fprintf(fileID,formatSpec,'Image file opened');
     figure;imshow(ImData,[]); title('Raw Image Data');
     [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);

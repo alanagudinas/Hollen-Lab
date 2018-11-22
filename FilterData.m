@@ -32,7 +32,7 @@ global metaDataFile
 fileID = fopen(metaDataFile,'a+');
 formatSpec = '%s\n';
 
-[NestedContoursCell, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix); % generate contour data
+[~, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix); % generate contour data
 
 fprintf(fileID,formatSpec,'Contour data generated');
 
@@ -902,5 +902,16 @@ hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 plot(addDatX,addDatY,'Color','magenta');
 hold off
+
+[NestedContoursCell,defCoordsXn,defCoordsYn] = FilterNest(defCoordsX, defCoordsY, ImUniBg);
+
+defCoordsX = defCoordsXn;
+defCoordsY = defCoordsYn;
+
+% contours are now sorted into groups
+% to eliminate the problem of multiple contours, start by taking largest
+% option and see what happens 
+
+
 
 end

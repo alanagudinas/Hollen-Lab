@@ -48,7 +48,7 @@
 % contour plot
 
 
-function [defCoordsX,defCoordsY,defStats,regionStats,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
+function [xCoords,yCoords,defStats,regionStats,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
 
 % check if user has necessary toolbox
 hasIPT = license('test', 'image_toolbox');  
@@ -118,7 +118,7 @@ close all
 % further analysis:
 [ImUniBgFinal, ImUniBgInit, meanPix1, meanPix2] = UniformBackground(ImFlatSmooth);
 
-figure; imshow(ImFlatSmooth,[]); title('Processed Image');
+figure; imshowpair(ImLineFlat, ImFlatSmooth,'montage'); title('Flattned Image; Processed Image');
 
 figure; imshowpair(ImUniBgInit,ImUniBgFinal,'montage'); title('(Left) Image after one uniformity iteration, (Right) Image after two iterations');  % Compare first and second iterations of UNIFORMBACKGROUND.
 
@@ -181,7 +181,7 @@ waitfor(mhooray);
 
 % Next step is statistical analysis.
 
-[defStats,regionStats] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ);
+[defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ);
 
 fprintf(fileID,formatSpec,'Complete');
 end

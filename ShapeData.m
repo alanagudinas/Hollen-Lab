@@ -203,6 +203,9 @@ elseif strcmp(optionfilt,'Yes')
                             FilteredNest{2,j}(:,i) = NaN(rt,1);
                         end
                     end
+                else
+                    FilteredNest{1,j}(:,i) = NaN(rt,1); % if the contour is below vertex filter, insert NaNs
+                    FilteredNest{2,j}(:,i) = NaN(rt,1);
                 end
             end
         end
@@ -285,6 +288,8 @@ if strcmp(optb,'Y')
     end
 end
 close all
+
+figure; imshow(ImLineFlat,[]);
 
 figure; imshow(ImFlatSmooth,[]);
 hold on

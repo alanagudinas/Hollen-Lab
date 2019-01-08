@@ -20,7 +20,7 @@
 % centData: an array of the coordinates of the centroid of each defect
 % contour
 
-function [defStats,regionStats] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ) 
+function [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ) 
 
 %%%%%%%you need to include dark defects as well%%%%%%%%%
 
@@ -47,14 +47,18 @@ end
 ImBW = zeros(rI,cI);
 defX = defCoordsX;
 defY = defCoordsY;
-nx = length(defX(1,:));
+[ny,nx] = size(defX);
 defArea = [];
+centDef = [];
 
 for i = 1:nx    
     xi = defX(:,i);
     yi = defY(:,i);
     xi(isnan(xi)) = [];
     yi(isnan(yi)) = [];
+    polyin = polyshape(xi,yi);
+    [centX,centY] = centroid(polyin);
+    centDef(i,:) = [centX , centY];
     Im_binR = poly2mask(xi,yi,rI,cI); % Im_binR is a binary image containing only the selected defect in white.
     defArea(i) = bwarea(Im_binR);
     ImBW = imfuse(ImBW,Im_binR);
@@ -73,6 +77,7 @@ end
 
 xMat = [];
 yMat = [];
+thetaVec = [];
 
 %------------------
 % the following is from Steve Eddins: https://blogs.mathworks.com/steve/2010/07/30/visualizing-regionprops-ellipse-measurements/
@@ -88,6 +93,8 @@ for k = 1:length(s)
     b = s(k).MinorAxisLength/2;
 
     theta = pi*s(k).Orientation/180;
+    thetaVec(k) = s(k).Orientation;
+    
     R = [ cos(theta)   sin(theta)
          -sin(theta)   cos(theta)];
 
@@ -105,10 +112,13 @@ for k = 1:length(s)
     xM = [xuM, xbM];
     yM = [yuM, ybM];
     
-    xMat(1,k) = xbM;
-    xMat(2,k) = xuM;
-    yMat(1,k) = ybM;
-    yMat(2,k) = yuM;
+    dev = 7;
+    xMat(1,k) = xbM-dev;
+    xMat(2,k) = xuM+dev;
+    yMat(1,k) = ybM-dev;
+    yMat(2,k) = yuM+dev;
+    
+   % thetaVec(k) = thetaT;
     
     if output_graph
         plot(x,y,'r','LineWidth',2);
@@ -142,7 +152,7 @@ vh = vh{1};
 % figure;
 % cprofile = gca;
 
-[ ImUniFl, ImUniFl2] = UniformBackground(ImZ);
+[ ImUniFl, ImUniFl2 ] = UniformBackground(ImZ);
 
 imshow(ImUniFl,[])
 
@@ -151,8 +161,14 @@ if strcmp(vh,'Major')
         c = improfile(ImUniFl,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
         maxHeightVec(i) = max(c);
         meanHeightVec(i) = mean(c);
-        %xprof = 1:1:length(c);
-        %figure; plot(xprof,c) % this is returning a figure for every single defect--beware!!
+        xprof = 1:1:length(c);
+        figure; 
+        plot(xprof,c)% this is returning a figure for every single defect--beware!!
+        hold on
+        grid on
+        xlabel('Pixels','FontSize',15);
+        ylabel('Apparent height (nm)','FontSize',15);
+        hold off
     end
 elseif strcmp(vh,'Minor')
     %nothing yet
@@ -219,9 +235,58 @@ areaVec = defAreaScale;
 %%%% option to add other line profiles
 
 regionStats = s;
-defStats = [maxHeightVec ; meanHeightVec];
 
-% finally, re-order both sets so that they match
 
+% finally, re-order both sets so that they match.
+% need two vectors of the centroid data
+
+centReg = centData;
+
+nR = length(centReg(:,1));
+nD = length(centDef(:,1));
+centDefCorrect = NaN(nD,2);
+maxHeightCorr = NaN(nD,1);
+meanHeightCorr = NaN(nD,1);
+xCoords = NaN(ny,nD);
+yCoords = NaN(ny,nD);
+
+
+for i = 1:nR
+ %Calculate the shortest distance and select that index
+    distanceFromSet = sqrt((centReg(i,1)-centDef(:,1)).^2 + (centReg(i,2)-centDef(:,2)).^2);
+    
+    %pull out the index of the closest location from set two
+    [~,min_index] = min(distanceFromSet);
+    
+    centDefCorrect(i,1:2) = centDef(min_index,1:2);
+    maxHeightCorr(i) = maxHeightVec(min_index);
+    meanHeightCorr(i) = meanHeightVec(min_index);
+    xCoords(:,i) = defX(:,min_index);
+    yCoords(:,i) = defY(:,min_index);
+    
+end
+
+maxHeightVec = maxHeightCorr;
+meanHeightVec = meanHeightCorr;
+defStats = [maxHeightVec , meanHeightVec];
+
+% figure; histogram(thetaVec)
+% hold on
+% a = 40;
+% b = 100;
+% line([b, b], [0, 10], 'Color', 'r', 'LineWidth', 2);
+% line([a, a], [0, 10], 'Color', 'r', 'LineWidth', 2);
+% hold off
+% 
+% figure; imshow(ImUniBg,[])
+% hold on
+% 
+% for i = 1:nx
+%     if thetaVec(nx) > a
+%         plot(defX(:,nx),defY(:,nx),'Color','cyan')
+%         drawnow
+%         hold on
+%     end
+% end
 
 end

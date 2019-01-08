@@ -78,7 +78,18 @@ figure;imshow(ImLineFlat,[])
 % https://www.mathworks.com/help/images/image-enhancement-and-analysis.html.
 % (Jason's notes)
 
-background = imopen(Im_data_flat_quad,strel('disk',15)); 
+% Introduce parameter for determining strel size for processing
+
+hd = helpdlg('After closing this window, you will be prompted to draw a rectangle around an example defect. Please draw it as tight as possible around the defect of interest.','Defect Size Parameter');
+waitfor(hd);
+
+rect = getrect;
+
+strelSize = 0.5 * (0.5*(rect(3)+rect(4)));
+
+strelSize = round(strelSize,0)
+
+background = imopen(Im_data_flat_quad,strel('disk',strelSize)); 
 Im_flat_bg = Im_data_flat_quad - background; 
 
 fprintf(fileID,formatSpec,'Background corrected');

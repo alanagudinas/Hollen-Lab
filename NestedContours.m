@@ -57,6 +57,7 @@ xdataC = xdata;
 ydataC = ydata;
 nd = length(xdata(1,:));
 k = 1;
+NestC = [];
 
 % Contour data is arranged in order from lowest to highest brightness
 % levels. The indexing order depends on interest in either bright or dark

@@ -5,6 +5,9 @@
 %
 % This program uses Jason Moscatello's image processing techniques
 % to prepare STM images for further analysis.
+%
+% This program assumes the fast scan direction in the image is horizontal,
+% represented by the "x" direction.
 % 
 % The input must be an image data array. If the data has dimensions m x n x
 % z, where z > 1, the program will automatically use ImData(:,:,1).
@@ -33,40 +36,29 @@ global output_graph
 Im_data = ImData;
 
 % Line-by-line flattening of the image:
- 
-for n=1:length(Im_data(1,:)) 
+
+for n=1:length(Im_data(:,1)) %assumes square?
 %create an array of x-data 
-    x = 1:length(Im_data(:,n)); 
-    x = transpose(x); % needed for x and y to have same dimension directions 
-
+    x = 1:length(Im_data(n,:)); 
+    %x = transpose(x); % needed for x and y to have same dimension directions 
+    
    % extract the y data from row n 
-
-   y = Im_data(:,n); 
-
+   y = Im_data(n,:); 
+   
    %fit this data with a linear fit:
    
    p = polyfit(x,y,1); 
 
    linecorrect = x.*p(1)+p(2); 
 
-   Im_data_flat_lin(:,n)=Im_data(:,n)-linecorrect; 
-
-end
-
-% For comparison purposes, line flatten with quadratic fit:
-for n=1:length(Im_data(1,:)) 
-
-   %fit data with a quadratic
-   
-   p2 = polyfit(x,y,2);
-   linecorrect2 = (x.^2).*p2(1) + x.*p2(2) + p2(3); 
-   Im_data_flat_quad(:,n)=Im_data(:,n)-linecorrect2; % Im_data_flat_quad is now the flattened image. 
+   Im_data_flat_lin(n,:)=Im_data(n,:)-linecorrect; 
    
 end
+
 
 fprintf(fileID,formatSpec,'Image data line-by-line flattened');
-ImLineFlat = Im_data_flat_quad; % Not for analysis, but for apparent height analysis and visualization.
-
+ImLineFlat = Im_data_flat_lin; % Not for analysis, but for apparent height analysis and visualization.
+ %linear fit 
 % ImLineFlat = Im_Flatten_XY2(Im_data); need to alter
 
 figure;imshow(ImLineFlat,[])
@@ -89,14 +81,14 @@ strelSize = 0.5 * (0.5*(rect(3)+rect(4)));
 
 strelSize = round(strelSize,0)
 
-background = imopen(Im_data_flat_quad,strel('disk',strelSize)); 
-Im_flat_bg = Im_data_flat_quad - background; 
+background = imopen(Im_data_flat_lin,strel('disk',strelSize)); 
+Im_flat_bg = Im_data_flat_lin - background; 
 
 fprintf(fileID,formatSpec,'Background corrected');
 
-% normalize the data for better display 
+%normalize the data for better display 
 
-normIm_flat = (Im_data_flat_quad - min(min(Im_data_flat_quad))) / (max(max(Im_data_flat_quad)) - min(min(Im_data_flat_quad))); 
+normIm_flat = (Im_data_flat_lin - min(min(Im_data_flat_lin))) / (max(max(Im_data_flat_lin)) - min(min(Im_data_flat_lin))); 
 normIm_flat_bg = (Im_flat_bg - min(min(Im_flat_bg))) / (max(max(Im_flat_bg)) - min(min(Im_flat_bg))); 
 
 fprintf(fileID,formatSpec,'Image data normalized');
@@ -118,14 +110,15 @@ ImflatA = imadjust(normIm_flat, [.001 .3],[]);
 fprintf(fileID,formatSpec,'Contrast adjusted');
 
 ImflatbgA = imadjust(normIm_flat_bg, [low high],[]); 
-
+%
 if output_graph
-    figure; imshowpair(ImflatA,ImflatbgA, 'montage'); title('Line Flatten to Background Correction'); 
+   figure; imshowpair(ImflatA,ImflatbgA, 'montage'); title('Line Flatten to Background Correction'); 
 end
 % get rid of line noise
 
 % filter strongly along the direction of the lines to get a background you 
 % can subtract 
+
 
 ImlineB = imgaussfilt(Im_flat_bg,[1 50]);  
 Ic = Im_flat_bg - ImlineB; 

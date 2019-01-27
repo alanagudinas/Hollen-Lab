@@ -47,7 +47,7 @@ h.Visible = 'On';
 set(imageb,'AlphaData',0.8); % Makes the image slightly transparent so the contour lines can be seen superimposed on the image.
 hold on
 
-[C,hdata] = imcontour(xImdat,yImdat,ImUniBg,10,'LineColor','cyan'); % Create contour lines at ten different brightness levels in the image.
+[C,hdata] = imcontour(xImdat,yImdat,ImUniBg,20,'LineColor','cyan'); % Create contour lines at ten different brightness levels in the image.
 hdata.LineWidth = 1.25;
 hold off
 close

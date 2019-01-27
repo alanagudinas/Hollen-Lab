@@ -142,7 +142,7 @@ maxlim = max(max(ImLine)); % For rescaling image.
 maxHeightVec = zeros(length(s),1); % Empty variables for apparent height stats.
 meanHeightVec = zeros(length(s),1);
 
-prompt = 'Specify whether to take a cross-section of the defects along the major or minor axis for statistical analysis.[Major/Minor]';
+prompt = 'Specify whether to take a cross-section of the defects along the major or horiztontal axis for statistical analysis. [Major/H]';
 definput = {'Major'};
 titleBox = 'Apparent Height Statistics';
 dims = [1 60];
@@ -151,27 +151,53 @@ vh = vh{1};
 
 % figure;
 % cprofile = gca;
+% 
+% [ ImUniFl, ImUniFl2 ] = UniformBackground(ImZ);
+% 
+% imshow(ImUniFl,[])
 
-[ ImUniFl, ImUniFl2 ] = UniformBackground(ImZ);
-
-imshow(ImUniFl,[])
+nx = length(defCoordsX(1,:));
+vt = 0;
+figure;
 
 if strcmp(vh,'Major')
     for i = 1:length(s)
-        c = improfile(ImUniFl,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+        c = improfile(ImLineFlat,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
         maxHeightVec(i) = max(c);
         meanHeightVec(i) = mean(c);
         xprof = 1:1:length(c);
-        figure; 
-        plot(xprof,c)% this is returning a figure for every single defect--beware!!
+        plot(xprof,c+vt)% this is returning a figure for every single defect--beware!!
         hold on
         grid on
         xlabel('Pixels','FontSize',15);
         ylabel('Apparent height (nm)','FontSize',15);
-        hold off
+        vt = vt + 0.5e-11;
     end
+    hold off
 elseif strcmp(vh,'Minor')
     %nothing yet
+elseif strcmp(vh,'H')
+    for i = 1:nx
+        defX = defCoordsX(:,i);
+        defX(isnan(defX)) = [];
+        if ~isempty(defX)
+            [x(2),xIdx(2)] = max(defX); % Find the max and min y value of each contour.
+            [x(1),xIdx(1)] = min(defX);
+            y(2) = defCoordsY(xIdx(2),i);
+            y(1) = defCoordsY(xIdx(1),i);
+            x(2) = x(2) + 5;
+            x(1) = x(1) - 5;
+            [cx,cy,c] = improfile(ImLine,x,y,50); % improfile records the brightness data along a line in the image.
+            maxHeightVec(i) = max(c);
+            meanHeightVec(i) = mean(c);
+            cdata(:,i) = c;
+            cxdata(:,i) = cx;
+            cydata(:,i) = cy;
+            if output_graph
+                plot(x,y,'Color','red') % Plot the crossection of the defect for user visualization.
+                hold on
+            end
+        end
 end
 
 if output_graph

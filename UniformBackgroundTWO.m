@@ -1,24 +1,9 @@
 % Author: Alana Gudinas
 % July 6, 2018
 %
-% [ImUniBg, ImUniBgINIT, meanPix1, meanPix2] = UniformBackground(Im_proc)
-% reduces the amount of noise in a STM image to make further analysis 
-% simple by increasing background uniformity. The function makes some
-% statistical computations on the pixels in the image, and determines a
-% brightness range that can be considered the background of the image. If a
-% pixel falls within that range, it is set to the mean pixel value of the
-% image.
-%
-% Im_proc is a processed image, which can be created from a raw STM image
-% using "ImageProcess."
-% ImUniBg is the result of the second iteration, an image with a more 
-% uniform background, where extrema are easier to distinguish, both 
-% optically and computationally. ImUniBgINIT is the result of the first
-% iteration. meanPix1 is the background pixel value from the first
-% iteration, and meanPix2 is the background pixel value from the second
-% iteration.
-%
-% Im_proc must be an image matrix.
+% Use this to test the slider function of UniformBackground.
+% You can adjust the pixel range for the background as well as strel size.
+
 
 function [ ImDataUpdate ] = UniformBackgroundTWO(Im_proc,Im_flat)
 

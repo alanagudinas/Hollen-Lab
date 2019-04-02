@@ -105,7 +105,7 @@ elseif strcmp(ext,'.asc')
     [ImFlatSmooth,ImLineFlat,ImZ] = ImageProcess(ImData);
 end
 
-if nargin == 1
+if nargin == 1 % have to fix this
     imWidth = ImSM4.Spatial.width;
     nmWidth = imWidth*(1e9); % Data is in meters, multiply by 1e9 to convert to nm.
 elseif nargin == 0
@@ -118,7 +118,7 @@ close all
 % further analysis:
 [ImUniBgFinal, ImUniBgInit, meanPix1, meanPix2] = UniformBackground(ImFlatSmooth);
 
-figure; imshowpair(ImLineFlat, ImFlatSmooth,'montage'); title('Flattned Image; Processed Image');
+figure; imshowpair(ImLineFlat, ImFlatSmooth,'montage'); title('Flattened Image; Processed Image');
 
 figure; imshowpair(ImUniBgInit,ImUniBgFinal,'montage'); title('(Left) Image after one uniformity iteration, (Right) Image after two iterations');  % Compare first and second iterations of UNIFORMBACKGROUND.
 

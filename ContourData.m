@@ -50,6 +50,7 @@ hold on
 [C,hdata] = imcontour(xImdat,yImdat,ImUniBg,20,'LineColor','cyan'); % Create contour lines at ten different brightness levels in the image.
 hdata.LineWidth = 1.25;
 hold off
+%%%
 close
 
 [ri,ci] = size(C);

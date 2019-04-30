@@ -19,22 +19,25 @@
 %
 %------------------------------------------------------------------------------------%
 
-function [ defCoordsX, defCoordsY, defCount] = IdentifyDefects(Method,ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+function [ defCoordsX, defCoordsY, defCount] = IdentifyDefects(Method,ImUniBg,ImLineFlat,meanPix)
 
 global metaDataFile
 fileID = fopen(metaDataFile,'a+');
 
 if strcmp(Method,'Filters')
-    [defCoordsX,defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix);
+    [defCoordsX,defCoordsY] = FilterData(ImUniBg,ImLineFlat,meanPix);
 elseif strcmp(Method, 'Shape')
-    [defCoordsX,defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix);
+    [defCoordsX,defCoordsY] = ShapeData(ImUniBg,ImLineFlat,meanPix);
 end
 
-figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+figure; imshow(ImLineFlat,[]); title('Identified Defects');
 hold on
-plot(defCoordsX,defCoordsY,'Color','yellow');
+plot(defCoordsX,defCoordsY,'Color','red','LineWidth',4);
 
 defCount = numel(findobj(gcf,'Type','line')); % counts all the plotted defects in the image
 
 formatSpec = 'Number of identified defects: %d\n';
 fprintf(fileID,formatSpec,defCount);
+
+waitfor(close) 
+end

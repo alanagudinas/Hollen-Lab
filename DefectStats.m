@@ -20,7 +20,7 @@
 % centData: an array of the coordinates of the centroid of each defect
 % contour
 
-function [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ) 
+function [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImUniBg,ImZ,nmWidth) 
 
 %%%%%%%you need to include dark defects as well%%%%%%%%%
 
@@ -42,7 +42,7 @@ end
 % Start by calculating the area of each defect by creating a binary image
 % of each contour plot (which represents a defect) 
 
-[rI,cI] = size(ImFlatSmooth);
+[rI,cI] = size(ImZ);
 
 ImBW = zeros(rI,cI);
 defX = defCoordsX;
@@ -133,7 +133,7 @@ hold off
 % Start by rescaling the line-flattened image to recover original pixel
 % brightnes data.
 
-ImLine = ImLineFlat;
+ImLine = ImZ;
 ImLine = ImLine + abs(min(min(ImLine))); % In case of negative brightness values, normalize data so that the darkest spots are 0.
 
 minlim = min(min(ImLine));
@@ -160,18 +160,19 @@ nx = length(defCoordsX(1,:));
 vt = 0;
 figure;
 
-if strcmp(vh,'Major')
+if strcmp(vh,'Major') 
     for i = 1:length(s)
-        c = improfile(ImLineFlat,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
-        maxHeightVec(i) = max(c);
+        c = improfile(ImZ,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+        [maxHeightVec(i),mi] = max(c);
         meanHeightVec(i) = mean(c);
-        xprof = 1:1:length(c);
+        len = length(c);
+        xprof = [mi-len:1:mi-1];
         plot(xprof,c+vt)% this is returning a figure for every single defect--beware!!
         hold on
         grid on
         xlabel('Pixels','FontSize',15);
         ylabel('Apparent height (nm)','FontSize',15);
-        vt = vt + 0.5e-11;
+        vt = vt + 1e-11;
     end
     hold off
 elseif strcmp(vh,'Minor')
@@ -198,6 +199,7 @@ elseif strcmp(vh,'H')
                 hold on
             end
         end
+    end
 end
 
 if output_graph
@@ -206,7 +208,7 @@ if output_graph
     clim = caxis;
     caxis([minlim maxlim]); % Change image scale for visualization and calculations.
     hold on
-    plot(defCoordsX,defCoordsY,'Color','yellow')
+    plot(defCoordsX,defCoordsY,'Color','cyan')
     hold off
 end
 
@@ -295,6 +297,8 @@ end
 maxHeightVec = maxHeightCorr;
 meanHeightVec = meanHeightCorr;
 defStats = [maxHeightVec , meanHeightVec];
+
+% figure; histogram(areaVec);
 
 % figure; histogram(thetaVec)
 % hold on

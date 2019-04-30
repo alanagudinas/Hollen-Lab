@@ -23,7 +23,7 @@
 % This function allows the user to decide at various moments whether to
 % manually add or delete defect contours from the image.
 
-function [ defCoordsX, defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+function [ defCoordsX, defCoordsY] = FilterData(ImUniBg,ImLineFlat,meanPix)
 
 global hMethod
 global help_dlg
@@ -208,7 +208,7 @@ for i = 1:length(xdataC(1,:))
     end
 end
 
-figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
+figure; imshow(ImLineFlat,[]); % may want to compare with original image here?
 hold on
 plot(xFilt,yFilt,'Color','yellow')
 hold off
@@ -297,7 +297,7 @@ if strcmp(psout,'N')
                 defCoordsY = yFilt;
             end
         elseif strcmp(psoutd,'Y')
-            figure; imshow(ImFlatSmooth,[]);
+            figure; imshow(ImLineFlat,[]);
             hold on
             plot(xFilt,yFilt,'Color','cyan');
             hold off
@@ -322,7 +322,7 @@ if strcmp(psout,'N')
             k = 1;
             while anspd ~=0
                 rectAdd = getrect;
-                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd);
                 [rx,cx] = size(AddX);
                 numA = numA + cx;
                 addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -355,7 +355,7 @@ if strcmp(psout,'N')
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
 
-                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -379,7 +379,7 @@ if strcmp(psout,'N')
                 close all
                 xld = defCoordsX;
                 yld = defCoordsY;
-                figure; imshow(ImFlatSmooth,[]);
+                figure; imshow(ImLineFlat,[]);
                 hold on
                 plot(xld,yld,'Color','yellow')
                 pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
@@ -396,7 +396,7 @@ if strcmp(psout,'N')
                             xld(:,j) = NaN;
                             yld(:,j) = NaN;
                             close all
-                            figure; imshow(ImFlatSmooth,[]);
+                            figure; imshow(ImLineFlat,[]);
                             hold on
                             plot(xld,yld,'Color','yellow')
                             hold off
@@ -564,7 +564,7 @@ if strcmp(psout,'N')
             end
         end
 
-        figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
+        figure; imshow(ImLineFlat,[]); 
         hold on
         plot(xFilt2,yFilt2,'Color','yellow')
         hold off
@@ -686,7 +686,7 @@ if ~isempty(xFilt2)
             numA = 0;
             while anspd ~=0
                 rectAdd = getrect;
-                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd);
                 [rx,cx] = size(AddX);
                 numA = numA + cx;
                 addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -719,7 +719,7 @@ if ~isempty(xFilt2)
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
                 
-                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -738,7 +738,7 @@ if ~isempty(xFilt2)
                 defCoordsX;
                 defCoordsY;
             elseif strcmp(psouta2,'Y')
-                figure;imshow(ImFlatSmooth,[]);
+                figure;imshow(ImLineFlat,[]);
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','yellow')
                 hold off
@@ -793,7 +793,7 @@ end
 
 close all
 
-figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+figure; imshow(ImUniBg,[]); title('Identified Defects');
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 hold off
@@ -897,7 +897,7 @@ defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN; 
 
 close all
-figure; imshow(ImFlatSmooth,[]);
+figure; imshow(ImLineFlat,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 plot(addDatX,addDatY,'Color','magenta');

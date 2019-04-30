@@ -14,6 +14,7 @@
 % the x and y coordinates of the identified defects, after a change of
 % coordinates to plot them in the correct region on the original image.
 
+% NOTE: no longer a processing option. 
 
 function [ defAddX, defAddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectData)
 
@@ -25,7 +26,12 @@ formatSpec = '%s\n';
     
 ImSectBg = imcrop(ImUniBg,rectData); % crop image w/ coordinates of rectData
 
-figure; imshow(ImSectBg,[]); title('Cropped Uniform Background Image')
+image_mean = mean2(ImSectBg);
+image_std = std2(ImSectBg);
+image_min = image_mean - 5*image_std;
+image_max = image_mean + 5*image_std;
+
+figure; imshow(ImSectBg,[image_min image_max]); title('Cropped Uniform Background Image')
 
 if help_dlg
     hs = 'The cropped image region is displayed';
@@ -33,40 +39,7 @@ if help_dlg
     waitfor(helps1);
 end
 
-prompts = 'Would you like to see the less processed image region? Y/N';
-titleBox = 'Image Choice';
-dims = [1 75];
-definput = {'N'};
-opts = inputdlg(prompts,titleBox,dims,definput); % let user choose to analyze a more noisy image
-opts = opts{1};
-
-if strcmp(opts,'Y')
-    ImSectFl = imcrop(ImLineFlat,rectData);
-    figure; imshow(ImSectFl,[]); title('Cropped Line-Flattened Image');
-    ImSectSm = imcrop(ImFlatSmooth,rectData);
-    figure; imshow(ImSectSm,[]); title('Smoothed and Flattened Image')
-    imSectArray = {ImSectBg,ImSectSm,ImSectFl};
-elseif strcmp(opts,'N')
-    imSectArray = {ImSectBg};
-end
-
-figure; montage(imSectArray,'Size', [1 length(imSectArray)]); title('Smaller Image Regions','FontSize',15);
-
-str = 'Which image would you like to analyze for defect identification? Type "1" for uniform background, "2" for flattened and smoothed, and "3" for line flattened (if applicable).';
-promptSect = {str};
-titleBox = 'Image Region Selection';
-dims = [1 60];
-definput = {'1'};
-ImSectAns = inputdlg(promptSect,titleBox,dims,definput);
-ImSectAns = ImSectAns{1};
-
-if strcmp(ImSectAns,'1')
-    ImSect = ImSectBg;
-elseif strcmp(ImSectAns,'2')
-    ImSect = ImSectSm;
-elseif strcmp(ImSectAns,'3')
-    ImSect = ImSectFl;
-end
+ImSect = ImSectBg;
 
 meanPix = mean(ImSect(:));
 
@@ -74,7 +47,7 @@ meanPix = mean(ImSect(:));
 xImdat = [1:1:c];
 yImdat = [1:1:r];
 
-imagesect = imshow(ImSect,[]);
+imagesect = imshow(ImSect,[image_min image_max]);
 h = gca; 
 h.Visible = 'On';
 set(imagesect,'AlphaData',0.8); 
@@ -216,5 +189,5 @@ elseif strcmp(smallans,'M')
     plot(xtarg,ytarg,'Color','cyan');
     hold off
 end
-
+close all
 end

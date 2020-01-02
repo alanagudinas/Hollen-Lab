@@ -46,7 +46,16 @@ Type the following in MATLAB's command line to begin the program:
 
 [outputs] = DIST( fileName, imageWidth )
 
-## 
+## Interactive Image Processing
+
+Running DIST will first trigger a GUI with two image frames and four interactive sliders. The left image is the original, and the right is the processed image updated when the sliders are moved. There are four controls: 
+
+- Strel disk radius: adjusts size of MATLAB strel object. https://www.mathworks.com/help/images/ref/strel.html
+- Gaussian filter sigma: adjusts standard deviation of 2-D Gaussian smoothing kernel.https://www.mathworks.com/help/images/ref/imgaussfilt.html
+- Lower bound parameter: sets the minimum pixel value in the image. Any pixels brighter than this value (and lower than the upper bound parameter) will be set to the mean pixel value in the image, which determines the background. 
+- Upper bound parameter: sets the maximum. pixel value in the image. Any pixels darker than this value (and brighter than the lower bound parameter) will be set to the mean pixel value in the image, which determines the background.
+
+The lower and upper bound parameters should be adjusted until 
  
 
 

@@ -2,8 +2,9 @@
 
 DIST: Defect Identification and Statistics Toolbox
 -
-User Guide:
--
+User Guide
+
+
 Before using this program, you should make sure to have Oliver Van Kaick's "Contour Correspondence via Ant Colony Optimization" file installed. You can access it here: https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization.
 
 From the "aco" folder, you should immediately run the function "set_global."

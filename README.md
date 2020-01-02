@@ -1,4 +1,3 @@
-# Hollen-Lab
 
 DIST: Defect Identification and Statistics Toolbox
 -

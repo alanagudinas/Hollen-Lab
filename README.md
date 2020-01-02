@@ -1,8 +1,8 @@
 # Hollen-Lab
 
-This is an image processing toolbox in MATLAB for statistical analysis of defects in STM images.
+DIST: Defect Identification and Statistics Toolbox
 -
-Brief User Guide:
+User Guide:
 -
 Before using this program, you should make sure to have Oliver Van Kaick's "Contour Correspondence via Ant Colony Optimization" file installed. You can access it here: https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization.
 

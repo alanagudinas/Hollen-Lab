@@ -20,13 +20,12 @@
 % centData: an array of the coordinates of the centroid of each defect
 % contour
 
-function [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth,ImZ) 
-
-%%%%%%%you need to include dark defects as well%%%%%%%%%
+function [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImUniBg,ImZ,ImFlat,nmWidth) 
 
 global help_dlg
 global output_graph
 global metaDataFile
+global hMethod
 
 defStats = [];
 
@@ -42,7 +41,7 @@ end
 % Start by calculating the area of each defect by creating a binary image
 % of each contour plot (which represents a defect) 
 
-[rI,cI] = size(ImFlatSmooth);
+[rI,cI] = size(ImZ);
 
 ImBW = zeros(rI,cI);
 defX = defCoordsX;
@@ -67,13 +66,8 @@ end
 ImBW = rgb2gray(ImBW);
 ImBW = imbinarize(ImBW);
 
-s = regionprops(ImBW,'Centroid','Eccentricity','MajorAxisLength','MinorAxisLength','Orientation'); % Find coordinates of center of defect.
+s = regionprops(ImBW,'Centroid','Eccentricity','MajorAxisLength','MinorAxisLength','Orientation','Area'); % Find coordinates of center of defect.
 centData = cat(1, s.Centroid);
-
-if output_graph
-    imshow(ImBW,[]);
-    hold on
-end
 
 xMat = [];
 yMat = [];
@@ -133,12 +127,13 @@ hold off
 % Start by rescaling the line-flattened image to recover original pixel
 % brightnes data.
 
-ImLine = ImLineFlat;
+ImLine = ImZ;
 ImLine = ImLine + abs(min(min(ImLine))); % In case of negative brightness values, normalize data so that the darkest spots are 0.
 
 minlim = min(min(ImLine));
 maxlim = max(max(ImLine)); % For rescaling image.
 
+minHeightVec = zeros(length(s),1);
 maxHeightVec = zeros(length(s),1); % Empty variables for apparent height stats.
 meanHeightVec = zeros(length(s),1);
 
@@ -149,29 +144,50 @@ dims = [1 60];
 vh = inputdlg(prompt,titleBox,dims,definput);
 vh = vh{1};
 
-% figure;
-% cprofile = gca;
-% 
-% [ ImUniFl, ImUniFl2 ] = UniformBackground(ImZ);
-% 
-% imshow(ImUniFl,[])
-
 nx = length(defCoordsX(1,:));
 vt = 0;
 figure;
 
-if strcmp(vh,'Major')
+% for aligning peaks: major axis
+% define reference index
+
+c = improfile(ImZ,xMat(:,3),yMat(:,3)); % improfile records the brightness data along a line in the image.
+if hMethod
+    [maxHeightVec(1),mi] = max(c);
+    meanHeightVec(1) = mean(c);
+    len = length(c);
+    xprof = [1:len];
+    x_ref = xprof(mi);
+else
+    [minHeightVec(1),mi] = min(c);
+    meanHeightVec(1) = mean(c);
+    len = length(c);
+    xprof = [1:len];
+    x_ref = xprof(mi);
+end
+        
+if strcmp(vh,'Major') % make local background the zero value % subtract out background to get a real delta z: take average of everything outside the contour boundary = background 
     for i = 1:length(s)
-        c = improfile(ImLineFlat,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
-        maxHeightVec(i) = max(c);
+        if hMethod
+            c = improfile(ImZ,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+            [maxHeightVec(i),mi] = max(c);
+        else
+            c = improfile(ImZ,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
+            [minHeightVec(i),mi] = min(c);
+        end
         meanHeightVec(i) = mean(c);
-        xprof = 1:1:length(c);
-        plot(xprof,c+vt)% this is returning a figure for every single defect--beware!!
+        len = length(c);
+        xprof = [1:len];
+        x_id = xprof(mi);
+        x_dif = x_ref - x_id;
+        xprof = xprof + x_dif;
+        plot(xprof,c+vt)
         hold on
         grid on
         xlabel('Pixels','FontSize',15);
         ylabel('Apparent height (nm)','FontSize',15);
-        vt = vt + 0.5e-11;
+        %vt = vt + 1e-11;
+        vt = vt + 0.17e-11;
     end
     hold off
 elseif strcmp(vh,'Minor')
@@ -198,20 +214,32 @@ elseif strcmp(vh,'H')
                 hold on
             end
         end
+    end
 end
 
+image_mean = mean2(ImFlat);
+image_std = std2(ImFlat);
+image_min = image_mean - 5*image_std;
+image_max = image_mean + 5*image_std;
+
 if output_graph
-    figure;imshow(ImLine); title('Line Flattened Image Data');
-    colorbar
-    clim = caxis;
-    caxis([minlim maxlim]); % Change image scale for visualization and calculations.
-    hold on
-    plot(defCoordsX,defCoordsY,'Color','yellow')
-    hold off
+%     figure;imshow(ImFlat,[image_min image_max]); title('Line Flattened Image Data');
+%     colorbar
+%     clim = caxis;
+%     caxis([minlim maxlim]); % Change image scale for visualization and calculations.
+%     hold on
+%     plot(defCoordsX,defCoordsY,'Color','cyan')
+%     hold off
 end
+
+figure;imshow(ImFlat,[image_min image_max]); title('Line Flattened Image Data');
+hold on
+plot(defCoordsX,defCoordsY,'Color','cyan');
+hold off
 
 maxHeightVec = maxHeightVec * 1e9; % Change units to nm, since original data is in m. 
 meanHeightVec = meanHeightVec * 1e9;
+minHeightVec = minHeightVec * 1e9;
 
 % The previously computed area vector is not accurate, need to compute a
 % scale for the image. The size of the image represents the number of
@@ -227,30 +255,48 @@ imSq = (imScale)^2; % imSq represents 1 nm^2.
 defAreaScale = defArea/imSq;
 
 % For plotting purposes:
-%szV = defAreaScale .* 5;
-szV = 40;
+szV = defAreaScale .* 15;
+% szV = 40;
 xrange = [1:1:length(s)];
 axrange = [1:1:length(defArea)];
 
 if output_graph
-    figure; scatter(axrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); %title('Identified Defect Areas','FontSize',15); 
+    figure; grid on; scatter(axrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
     hold on
     xlabel('Index','FontSize',15);
     ylabel('Area (nm^2)','FontSize',15);
     hold off
 end
 
-maxHSort = sort(maxHeightVec);
-meanHSort = sort(meanHeightVec);
+[maxHSort,maxI] = sort(maxHeightVec);
+[meanHSort,meanI] = sort(meanHeightVec);
+
+if hMethod == 0
+    meanHSort = meanHSort(end:-1:1);
+    meanI = meanI(end:-1:1);
+end
+    
+[minHSort,minI] = sort(minHeightVec);
+minHSort = minHSort(end:-1:1);
+minI = minI(end:-1:1);
 
 if output_graph
     sz = 50;
-    figure; scatter(xrange,maxHSort,sz,[0/255,0/255,204/255],'filled'); %title('Defect Apparent Heights','FontSize',15);
-    hold on
-    scatter(xrange,meanHSort,sz,[225/255,116/255,7/255],'filled'); 
+    if hMethod
+        figure; scatter(xrange,maxHSort,szV,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
+        hold on
+    else
+        figure; scatter(xrange,minHSort,szV,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
+        hold on
+    end
+    scatter(xrange,meanHSort,szV,[225/255,116/255,7/255],'filled'); 
     xlabel('Index','FontSize',15);
     ylabel('Apparent Height (nm)','FontSize',15);
-    legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')
+    if hMethod
+        legend('Maximum Height (nm)','Average Height (nm)','Location','northwest')
+    else
+        legend('Minimum Height (nm)','Average Height (nm)','Location','northwest')
+    end
     grid on
     hold off
 end
@@ -294,7 +340,16 @@ end
 
 maxHeightVec = maxHeightCorr;
 meanHeightVec = meanHeightCorr;
-defStats = [maxHeightVec , meanHeightVec];
+
+
+if hMethod ==1
+    defStats = [maxHeightVec, maxI, meanHeightVec, meanI];
+else 
+    defStats = [minHeightVec, minI, meanHeightVec, meanI];
+    
+end
+
+% figure; histogram(areaVec);
 
 % figure; histogram(thetaVec)
 % hold on

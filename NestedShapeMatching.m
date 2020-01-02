@@ -1,5 +1,5 @@
 % Author: Alana Gudinas
-% July 20, 2018
+% 29 December 2019
 %
 % [defCoordsX, defCoordsY] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
 %
@@ -9,11 +9,12 @@
 %
 % https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization
 %
-% The inputs are: (ImUniBg) the output of UNIFORM BACKGROUND,
+% The inputs are: (ImUniBg) the output of FilteringGUI,
 % (NestedContoursCell) a cell array, and (dataC) matrices of the contour
 % data.
 % The outputs are (defCoordsX/Y) the coordinates of the defect plots resulting
-% from the shape matching.
+% from the shape matching, and (bestvec), a vector of the best cost values
+% for each defect comparison.
 
 
 function [defCoordsX, defCoordsY, bestvec] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC)
@@ -30,19 +31,24 @@ else
 end
 
 bestvec = [];
+bestCell = [];
 
 [rU,cU] = size(ImUniBg);
+image_mean = mean2(ImUniBg);
+image_std = std2(ImUniBg);
+image_min = image_mean - 5*image_std;
+image_max = image_mean + 5*image_std;
 
-figure; imshow(ImUniBg,[]); title('Defect that will be used in shape-matching comparison');
+figure; imshow(ImUniBg,[image_min image_max]); title('Defect that will be used in shape-matching comparison');
 hold on
-plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]); % Plot all the contour lines in the image.
+plot(xdataC,ydataC,'Color','blue'); % Plot all the contour lines in the image.
+% [173/255;255/255;47/255]
 
 
-if help_dlg
-    shapehelp = 'Select a rectangular region of the image that contains contour lines you are interested in.';
-    h1 = helpdlg(shapehelp,'Contour Selection');
-    waitfor(h1);
-end
+shapehelp = 'Select a rectangular region of the image that contains contour lines you are interested in comparing.';
+h1 = helpdlg(shapehelp,'Contour Selection');
+waitfor(h1);
+
 
 rect = getrect; % Prompt user to use rectangle selection to choose a region with a defect of interest.
     
@@ -80,7 +86,7 @@ k = 1; % for indexing
 
 close all
 
-figure; imshow(ImUniBg,[]);
+figure; imshow(ImUniBg,[image_min image_max]);
 hold on
 
 for k = idxN
@@ -89,9 +95,9 @@ for k = idxN
     xint(isnan(xint)) = [];
     yint(isnan(yint)) = [];
     if ((x < max(xint)) & (x > min(xint))) && ((y < max(yint)) & (y > min(yint)))
-        xRef = [xRef, xdataC(:,k)]; % matrix of all the plots "inside" the one point
+        xRef = [xRef, xdataC(:,k)]; % matrix of all the plots "outside" the one point
         yRef = [yRef, ydataC(:,k)];
-        k = k + 1;
+        % k = k + 1;
     end
 end
 
@@ -103,8 +109,7 @@ for i = 1:length(xRef(1,:))
     Im_binR = poly2mask(xint,yint,cU,rU);
     areaVec(i) = bwarea(Im_binR); % compute the area of each contour 
 end
-global xtarg
-global ytarg 
+
 [~,idm] = min(areaVec);
 xtarg = xRef(:,idm); % the contour with the minimum area will be chosen 
 ytarg = yRef(:,idm);
@@ -112,16 +117,15 @@ ytarg = yRef(:,idm);
 xtarg(isnan(xtarg)) = [];
 ytarg(isnan(ytarg)) = [];
 
-
 plot(xtarg,ytarg,'Color','cyan');
 
-% minvec = min(xRef); % find the greatest x value in the matrix
+% minvec = min(xRef); % find the lowest x value in the matrix
 % [minval,idxval] = min(minvec); % find the index
 % xi = xRef(:,idxval); % find the largest plot 
 % yi = yRef(:,idxval);
 % xi(isnan(xi)) = [];
 % yi(isnan(yi)) = [];
-% plot(xi,yi,'Color','cyan');
+%plot(xi,yi,'Color','cyan');
 
 hold off
 
@@ -133,6 +137,8 @@ end
 
 pause(2)
 close all
+
+xi = xtarg; yi = ytarg;
 
 Y1 = [xi, yi]; % variable for shape-matching function.
 
@@ -151,7 +157,7 @@ bestcost = [];
 defCoordsX = [];
 defCoordsY = [];
 
-figure; imshow(ImUniBg,[]);
+figure; imshow(ImUniBg,[image_min image_max]);
 hold on
 plot(xdataC,ydataC,'Color',[173/255;255/255;47/255]);
 
@@ -184,11 +190,43 @@ for j = 1:cN
     drawnow
     defCoordsX = [defCoordsX, coNest{1,j}(:,idxB)]; % add coordinates to output
     defCoordsY = [defCoordsY, coNest{2,j}(:,idxB)];
+    bestCell{1,j} = bestcost;
     bestcost = []; % reset
     bestvec = [bestvec, minB];
 end
 hold off
 
+for j = 1:length(bestvec)
+    if isnan(bestvec(j))
+        bestvec(j) = 1;
+    end
+end
+
+% for i = 1:length(bestCell)
+%     if ~all(isnan(bestCell{1,i}))
+%         figure; histogram(bestCell{1,i},5, 'FaceColor',[0.4660 0.6740 0.1880]);
+%     end
+% end
+
+figure; imshow(ImUniBg, [image_min image_max]);
+hold on
+for i = 1:length(defCoordsX(1,:))
+    plot(defCoordsX(:,i), defCoordsY(:,i), 'Color', [1 0 bestvec(i)/max(bestvec)]);
+    hold on
+end
+
+try
+    assignin('base','bestvec',bestvec);
+catch
+    print(bestvec)
+end
+
+
+try
+    assignin('base','bestCell',bestCell);
+catch
+    print(bestCell)
+end
 
 end
 

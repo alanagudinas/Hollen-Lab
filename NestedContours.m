@@ -1,5 +1,5 @@
 % Author: Alana Gudinas
-% July 18, 2018
+% 29 December 2019
 %
 % [NestedContoursCell, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix)
 %
@@ -7,13 +7,12 @@
 % contours that lie within one another. One of the ouptputs,
 % "NestedContoursCell" is a cell array with two rows, the top representing
 % the x-coordinates, and the bottom representing the y-coordinates. Each
-% column of the cell array is a contour "group". Thus, to plot for
-% example NestedContoursCell{1,1} vs NestedContoursCell{2,1} would plot all
-% of the contours in the column one of the cell array, all of which are
-% nested within one another.
+% column of the cell array is a contour "group". Thus, plotting
+% NestedContoursCell{1,1} vs NestedContoursCell{2,1} displays all of the 
+% contours in column one of the cell array.
 %
-% The input is a heavily processed image (ImUniBg), the output of
-% UNIFORMBACKGROUND, and the outputs are: a cell array (NestedContoursCell)
+% The input is the processesed image (ImUniBg), the output of
+% FilteringGUI, and the outputs are: a cell array (NestedContoursCell)
 % containing the coordinates of all the nested contours, (dataC) matrices
 % of the x and y coordinates of all the contours, and (heightVec) a vector
 % of all the "heights" of the contour coordinates. The heights correspond
@@ -47,6 +46,7 @@ elseif strcmp(defAns,'D')
     Method = 'Dark';
     hMethod = 0;
 end
+
 
 fprintf(fileID,formatSpec,Method);
 

@@ -1,29 +1,27 @@
 % Author: Alana Gudinas
-% July 23, 2018
+% 29 December 2019
 %
-% [ defCoordsX, defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+% [ defCoordsX, defCoordsY, NestedContoursCell] = FilterData(ImUniBg,ImLineFlat,meanPix)
 %
 % The purpose of this function is to identify the defects in an STM image
 % using a series of filters targeted at the contour data of the image.
 % The data may be filtered by vertices, area, and pixel brightness.
 %
 % The inputs to the function are similar to other functions in this
-% toolbox: (ImUniBig) the uniform background image from UNIFORM BACKGROUND,
-% (ImLineFlat) the line-flattened image, (ImFlatSmooth) the processed
-% image, and (meanPix) an output from UNIFORM BACKGROUND.
+% toolbox: (ImUniBig) the processed image from the GUI,
+% (ImLineFlat) the line-flattened image, and (meanPix).
 %
 % The function outputs the coordinates of the identified defects in the
 % image (defCoordsx/Y).
 %
-% The reason this, and many other functions (like SHAPEDATA) require so
-% many inputs is so that they may be used as stand-alone functions if
-% desired. Also useful for testing their functionality without running
-% through the whole script. 
+% The reason this and SHAPEDATA require so many inputs is so that they may 
+% be used as stand-alone functions if desired. Also useful for testing 
+% their functionality without running through the whole script. 
 %
 % This function allows the user to decide at various moments whether to
 % manually add or delete defect contours from the image.
 
-function [ defCoordsX, defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+function [ defCoordsX, defCoordsY, NestedContoursCell] = FilterData(ImUniBg,ImLineFlat,meanPix)
 
 global hMethod
 global help_dlg
@@ -32,7 +30,7 @@ global metaDataFile
 fileID = fopen(metaDataFile,'a+');
 formatSpec = '%s\n';
 
-[~, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix); % generate contour data
+[NestedContoursCell, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix); % generate contour data
 
 fprintf(fileID,formatSpec,'Contour data generated');
 
@@ -100,7 +98,7 @@ for k = idxN
     yint = ydataC(:,k);
     xint(isnan(xint)) = [];
     yint(isnan(yint)) = []; 
-    if ((xint > rect(1)) & (xint < (rect(1)+rect(3)))) & ((yint > rect(2)) & (yint < (rect(2)+rect(4)))) % Test each plot to see if it falls within rectangle.
+    if ((xint >= rect(1)) & (xint <= (rect(1)+rect(3)))) & ((yint >= rect(2)) & (yint <= (rect(2)+rect(4)))) % Test each plot to see if it falls within rectangle.
         xi = xint;
         yi = yint;
         plot(xi,yi,'Color','blue'); % Plot all lines within rectangle.
@@ -201,14 +199,14 @@ for i = 1:length(xdataC(1,:))
     if (diffArea(i) < areaFilt) & (vtx(i) > vtxFilt) & (((refH - brightLow) <= heightVec(i)) & (heightVec(i) <= (refH + brightHigh)))
         xFilt(:,k) = xdataC(:,i); % new variable containing all the defects that pass the filter
         yFilt(:,k) = ydataC(:,i);
-        xB(:,i) = NaN(length(xB(:,i)),1); % new varialbe for the remaining defects
+        xB(:,i) = NaN(length(xB(:,i)),1); % new variable for the remaining defects
         yB(:,i) = NaN(length(xB(:,i)),1);
         hV(i) = NaN; % new height vector
         k = k + 1;
     end
 end
 
-figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
+figure; imshow(ImLineFlat,[]); % may want to compare with original image here?
 hold on
 plot(xFilt,yFilt,'Color','yellow')
 hold off
@@ -218,11 +216,6 @@ if help_dlg
     helpf6 = helpdlg(hf6,'Results');
     waitfor(helpf6);
 end
-
-figure; imshow(ImLineFlat,[]);
-hold on
-plot(xFilt,yFilt,'Color','cyan')
-hold off
 
 ps = 'Have all the defects been correctly identified? (Y/N)';
 titleBox = 'Accuracy Inquiry';
@@ -297,8 +290,10 @@ if strcmp(psout,'N')
                 defCoordsY = yFilt;
             end
         elseif strcmp(psoutd,'Y')
-            figure; imshow(ImFlatSmooth,[]);
+            close
+            figure; imshow(ImLineFlat,[]);
             hold on
+            plot(xdataC,ydataC,'Color','yellow');
             plot(xFilt,yFilt,'Color','cyan');
             hold off
             if help_dlg
@@ -322,7 +317,7 @@ if strcmp(psout,'N')
             k = 1;
             while anspd ~=0
                 rectAdd = getrect;
-                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd);
                 [rx,cx] = size(AddX);
                 numA = numA + cx;
                 addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -355,7 +350,7 @@ if strcmp(psout,'N')
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
 
-                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -379,7 +374,7 @@ if strcmp(psout,'N')
                 close all
                 xld = defCoordsX;
                 yld = defCoordsY;
-                figure; imshow(ImFlatSmooth,[]);
+                figure; imshow(ImLineFlat,[]);
                 hold on
                 plot(xld,yld,'Color','yellow')
                 pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
@@ -396,7 +391,7 @@ if strcmp(psout,'N')
                             xld(:,j) = NaN;
                             yld(:,j) = NaN;
                             close all
-                            figure; imshow(ImFlatSmooth,[]);
+                            figure; imshow(ImLineFlat,[]);
                             hold on
                             plot(xld,yld,'Color','yellow')
                             hold off
@@ -414,7 +409,6 @@ if strcmp(psout,'N')
         end  
     elseif strcmp(ps1out,'Y')
         close all
-        figure;imshow(ImLineFlat,[]);
         figure; imshow(ImUniBg,[]); title('Unidentified Contour Lines (Green)','FontSize',15);
         hold on
         plot(xFilt,yFilt,'Color','cyan');
@@ -564,7 +558,7 @@ if strcmp(psout,'N')
             end
         end
 
-        figure; imshow(ImFlatSmooth,[]); % may want to compare with original image here?
+        figure; imshow(ImLineFlat,[]); 
         hold on
         plot(xFilt2,yFilt2,'Color','yellow')
         hold off
@@ -602,7 +596,6 @@ if ~isempty(xFilt2)
     
     close all
     figure; imshow(ImLineFlat,[]);
-    figure; imshow(ImUniBg,[]);
     hold on
     plot(xFilt,yFilt,'Color','red');
     plot(xFilt2,yFilt2,'Color','yellow');
@@ -669,15 +662,17 @@ if ~isempty(xFilt2)
             end
         elseif strcmp(psoutd,'Y')
             if help_dlg
-                adds = 'Please select a region containg a defect that shold be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
+                adds = 'Please select a region containg a defect that should be re-analyzed. When you are ready to begin, type 1 in the command line. When you have finished analyzing more regions, type 0. [0]:';
                 helpadd = helpdlg(adds,'Defect Addition');
                 waitfor(helpadd);
             end
+            pl = 'Select a region in the image containing a defect that should be re-analyzed.';
+            disp(pl);
             pd = 'Type "0" when finished adding defects. Type "1" to begin. [0]:';
             anspd = input(pd);
             defCoordsX = [];
             defCoordsY = [];
-            defAddX = zeros(750,100); % FIX THIS!!!!!
+            defAddX = zeros(750,100); % not general
             defAddY = zeros(750,100);
             addDatX = zeros(750,200); 
             addDatY = zeros(750,200); 
@@ -686,7 +681,7 @@ if ~isempty(xFilt2)
             numA = 0;
             while anspd ~=0
                 rectAdd = getrect;
-                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+                [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd);
                 [rx,cx] = size(AddX);
                 numA = numA + cx;
                 addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -719,7 +714,7 @@ if ~isempty(xFilt2)
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
                 
-                figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -738,7 +733,7 @@ if ~isempty(xFilt2)
                 defCoordsX;
                 defCoordsY;
             elseif strcmp(psouta2,'Y')
-                figure;imshow(ImFlatSmooth,[]);
+                figure;imshow(ImLineFlat,[]);
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','yellow')
                 hold off
@@ -793,7 +788,7 @@ end
 
 close all
 
-figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+figure; imshow(ImUniBg,[]); title('Identified Defects');
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 hold off
@@ -815,6 +810,7 @@ if strcmp(optquick,'N')
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
     hold off
 elseif strcmp(optquick,'Y')
+    close all
     addX = [];
     addY = [];
     figure; imshow(ImLineFlat,[]);title('Unidentified contour lines plotted in magenta');
@@ -844,8 +840,8 @@ elseif strcmp(optquick,'Y')
         for i = idxN
             xCoord = xdataC(:,i);
             yCoord = ydataC(:,i);
-            xCoord(~isnan(xCoord)) = [];
-            yCoord(~isnan(yCoord)) = [];
+            xCoord(isnan(xCoord)) = [];
+            yCoord(isnan(yCoord)) = [];
             if ((xCoord > quickR(1)) & (xCoord < (quickR(1)+quickR(3)))) & ((yCoord > quickR(2)) & (yCoord < (quickR(2)+quickR(4)))) % Test each plot to see if it falls within rectangle.
                 addX = [addX, xdataC(:,i)];
                 addY = [addY, ydataC(:,i)];
@@ -860,8 +856,11 @@ elseif strcmp(optquick,'Y')
                 Im_binR = poly2mask(xint,yint,cU,rU);
                 areaVec(i) = bwarea(Im_binR);
             end
+            [rx,cx] = size(addX);
             figure; imshow(ImLineFlat,[]);
             hold on
+            plot(xdataC,ydataC,'Color','magenta');
+            plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
             [~,idm] = max(areaVec);
             xtarg = addX(:,idm);
             ytarg = addY(:,idm);
@@ -869,8 +868,8 @@ elseif strcmp(optquick,'Y')
             defCoordsY = [defCoordsY, ytarg];
             plot(xtarg,ytarg,'Color',[173/255;255/255;47/255]);
             numA = numA + 1;
-            addDatX(1:rx,cA+numA) = xtarg;
-            addDatY(1:rx,cA+numA) = ytarg;
+            addDatX(1:rx,cx+numA) = xtarg;
+            addDatY(1:rx,cx+numA) = ytarg;
         end
         pd = 'Type "0" when finished adding plots. [0]:';
         anspd = input(pd);
@@ -897,7 +896,7 @@ defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN; 
 
 close all
-figure; imshow(ImFlatSmooth,[]);
+figure; imshow(ImLineFlat,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 plot(addDatX,addDatY,'Color','magenta');
@@ -907,11 +906,6 @@ hold off
 
 defCoordsX = defCoordsXn;
 defCoordsY = defCoordsYn;
-
-% contours are now sorted into groups
-% to eliminate the problem of multiple contours, start by taking largest
-% option and see what happens 
-
 
 
 end

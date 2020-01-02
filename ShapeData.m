@@ -1,15 +1,14 @@
 % Author: Alana Gudinas
-% July 2018
+% 29 December 2019
 %
-% [ defCoordsX, defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+% [ defCoordsX, defCoordsY] = ShapeData(ImUniBg,ImLineFlat,meanPix)
 % 
 % The purpose of this function is to identify all the defects in an STM
 % image using a shape-matching algorithm.
 %
 % The inputs to the function are similar to other functions in this
-% toolbox: (ImUniBig) the uniform background image from UNIFORM BACKGROUND,
-% (ImLineFlat) the line-flattened image, (ImFlatSmooth) the processed
-% image, and (meanPix) an output from UNIFORM BACKGROUND.
+% toolbox: (ImUniBig) the processed image from the GUI,
+% (ImLineFlat) the line-flattened image, and (meanPix).
 %
 % The function outputs the coordinates of the identified defects in the
 % image.
@@ -20,7 +19,7 @@
 % This function allows the user to decide at various moments whether to
 % manually add or delete defect contours from the image.
 
-function [ defCoordsX, defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+function [ defCoordsX, defCoordsY, NestedContoursCell] = ShapeData(ImUniBg,ImLineFlat,meanPix)
 
 global help_dlg
 global metaDataFile
@@ -32,13 +31,13 @@ formatSpec = '%s\n';
 addDatX = [];
 addDatY = [];
 
+% 'NestedContours' sorts all concentric contours into separate cells.
 [NestedContoursCell, xdataC, ydataC] = NestedContours(ImUniBg,meanPix); % generate cell array of contour groups 
 
 fprintf(fileID,formatSpec,'Contour data generated');
 
 figure; imshow(ImLineFlat,[]);
 
-figure; imshow(ImFlatSmooth,[])
 hold on
 [~,cN] = size(NestedContoursCell);
 for i = 1:cN
@@ -62,6 +61,8 @@ definput = {'Yes'};
 optionfilt = inputdlg(promptfilt,titleBox,dims,definput);
 optionfilt = optionfilt{1};
 
+% 'NestedShapeMatching' performs shape matching by first selecting the best
+% match from each contour group.
 if strcmp(optionfilt,'No')
     [defCoordsX, defCoordsY,bestvec] = NestedShapeMatching(ImUniBg, NestedContoursCell, xdataC, ydataC);
     fprintf(fileID,formatSpec,'Shape matching completed');
@@ -243,7 +244,7 @@ elseif strcmp(optionfilt,'Yes')
     xCoord = [];
     yCoord = [];
     close all
-    figure; imshow(ImFlatSmooth,[]); title('Plots remaining after filters were applied');
+    figure; imshow(ImLineFlat,[]); title('Plots remaining after filters were applied');
     hold on
     [rNest,cNest] = size(FilteredNest);
     for i = 1:cNest
@@ -260,7 +261,7 @@ elseif strcmp(optionfilt,'Yes')
     fprintf(fileID,formatSpec,'Shape matching completed');
 end
     
-figure; imshow(ImFlatSmooth,[]); title('Results of the first round of identification via shape matching'); 
+figure; imshow(ImLineFlat,[]); title('Results of the first round of identification via shape matching'); 
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 hold off
@@ -291,7 +292,6 @@ close all
 
 figure; imshow(ImLineFlat,[]);
 
-figure; imshow(ImFlatSmooth,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 hold off
@@ -398,7 +398,7 @@ elseif strcmp(option1,'No')
                 numA = 0;
                 while anspd ~= 0 
                     rectAdd = getrect; % user selects region that needs further analysis
-                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd); % rectangle coordinates are inputted
+                    [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd); % rectangle coordinates are inputted
                     [rx,cx] = size(AddX);
                     numA = numA + cx;
                     addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -432,7 +432,7 @@ elseif strcmp(option1,'No')
                     defCoordsX(defCoordsX == 0) = NaN;
                     defCoordsY(defCoordsY == 0) = NaN;  
 
-                    figure; imshow(ImFlatSmooth,[]);
+                    figure; imshow(ImLineFlat,[]);
                     hold on
                     plot(defCoordsX,defCoordsY,'Color','cyan');
                     pd = 'Type "0" when finished adding defects. [0]:';
@@ -468,7 +468,7 @@ elseif strcmp(option1,'No')
         numA = 0;
         while anspd ~= 0 
             rectAdd = getrect;
-            [ AddX, AddY ] = SmallRegion(ImLineFlat,ImFlatSmooth,ImUniBg,rectAdd);
+            [ AddX, AddY ] = SmallRegion(ImLineFlat,ImUniBg,ImUniBg,rectAdd);
             [rx,cx] = size(AddX);
             numA = numA + cx;
             addDatX(1:rx,numA:numA+cx-1) = AddX;
@@ -502,7 +502,7 @@ elseif strcmp(option1,'No')
             defCoordsX(defCoordsX == 0) = NaN;
             defCoordsY(defCoordsY == 0) = NaN;  
         
-            figure; imshow(ImFlatSmooth,[]);
+            figure; imshow(ImLineFlat,[]);
             hold on
             plot(defCoordsX,defCoordsY,'Color','cyan');
             pd = 'Type "0" when finished adding defects. [0]:';
@@ -597,6 +597,7 @@ if strcmp(optquick,'N')
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
     hold off
 elseif strcmp(optquick,'Y')
+    close all
     addX = [];
     addY = [];
     figure; imshow(ImLineFlat,[]);
@@ -674,7 +675,7 @@ defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN;  
 
 close all
-figure; imshow(ImFlatSmooth,[]);
+figure; imshow(ImLineFlat,[]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan')
 plot(addDatX,addDatY,'Color','magenta');

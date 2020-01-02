@@ -1,16 +1,11 @@
 % Author: Alana Gudinas
-% July 2018
+% 29 December 2019
 % 
 % function [ C, hdata, idx, vtx, xdata, ydata, heightVec] = ContourData(ImUniBg,Method,meanPix)
 %
 % The purpose of this function is to generate contour data based on the
-% various brightness levels present in an STM image. Ideally, the input is
-% a highly processed image with little noise. The suggested input is
-% "ImUniBg", which is the output of UNIFORM BACKGROUND. 
-% "Method" must be a string entry, either 'Bright' or 'Dark'. "Method"
-% specifies if the user is interested in analyzing bright or dark defects
-% in an image, as compared to the background brightness. "meanPix" is the
-% mean pixel brightness of the image. 
+% various brightness levels present in an STM image. Inputs are described
+% in IDENTIFYDEFECTS.
 %
 % C and hdata are the outputs of MATLAB's "imcontour". "idx" and "vtx" are
 % vectors specifying the index in C where a new contour line begins, and
@@ -50,6 +45,7 @@ hold on
 [C,hdata] = imcontour(xImdat,yImdat,ImUniBg,20,'LineColor','cyan'); % Create contour lines at ten different brightness levels in the image.
 hdata.LineWidth = 1.25;
 hold off
+%%%
 close
 
 [ri,ci] = size(C);
@@ -90,6 +86,7 @@ if hMethod == 1
         end
     end
 elseif hMethod == 0
+
     for i = 1:length(idx)
         if (C(1,idx(i)) < meanPix)
             xdata(1:vtx(i),i) = C(1,idx(i)+1:idx(i)+vtx(i));

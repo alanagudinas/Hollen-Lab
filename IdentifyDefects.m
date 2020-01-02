@@ -1,40 +1,41 @@
 % Author: Alana Gudinas
-% July 9, 2018
+% 29 December 2019
 %
-% [defCoordsX, defCoordsY, defCount] = IdentifyDefects( ImUniBig, Method )
+% [defCoordsX, defCoordsY, defCount, NestedContoursCell] = IdentifyDefects( Method,ImProc,ImLineFlat,meanPix )
 %
-% The purpose of this function is to accurately identify all the defects
-% (regardless of brightness) within an STM image, after its background
-% uniformity has been improved.
+% This function directs the image data to either SHAPEDATA or FILTERDATA
+% based on the user's choice for defect identification.
 %
-% The inputs are: (Method) the chosen method of defect identification, 
-% (ImUniBg) an image with a uniform background created by UNIFORM BACKGROUND,
-% (ImLineFlat) the line flattened image, (ImFlatSmooth) the processed
-% image, and (meanPix) an output of UNIFORM BACKGROUND.
+% Inputs
+% 'Method': S or F for shape matching or filtering.
+% 'ImProc': processed image after using GUI.
+% 'ImLineFlat': line-flattened image produced from GUI.
+% 'meanPix': mean pixel value in the image.
 %
-% The function returns defCoords, the coordinates of all the defect
-% contours, and defCount, the number of identified defects.
-% 
-% "Method" can either be Height Comparison or Shape Matching. 
+% Outputs are described in 'DIST'.
 %
 %------------------------------------------------------------------------------------%
 
-function [ defCoordsX, defCoordsY, defCount] = IdentifyDefects(Method,ImUniBg,ImLineFlat,ImFlatSmooth,meanPix)
+function [defCoordsX, defCoordsY, defCount, NestedContoursCell] = IdentifyDefects(Method,ImProc,ImLineFlat,meanPix)
 
 global metaDataFile
 fileID = fopen(metaDataFile,'a+');
 
 if strcmp(Method,'Filters')
-    [defCoordsX,defCoordsY] = FilterData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix);
+    [defCoordsX,defCoordsY,NestedContoursCell] = FilterData(ImProc,ImLineFlat,meanPix);
 elseif strcmp(Method, 'Shape')
-    [defCoordsX,defCoordsY] = ShapeData(ImUniBg,ImLineFlat,ImFlatSmooth,meanPix);
+    [defCoordsX,defCoordsY,NestedContoursCell] = ShapeData(ImProc,ImLineFlat,meanPix);
 end
 
-figure; imshow(ImFlatSmooth,[]); title('Identified Defects');
+figure; imshow(ImLineFlat,[]); title('Identified Defects');
 hold on
-plot(defCoordsX,defCoordsY,'Color','yellow');
+plot(defCoordsX,defCoordsY,'Color','red','LineWidth',4);
+hold off
 
 defCount = numel(findobj(gcf,'Type','line')); % counts all the plotted defects in the image
 
 formatSpec = 'Number of identified defects: %d\n';
 fprintf(fileID,formatSpec,defCount);
+
+% waitfor(close) 
+end

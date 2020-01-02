@@ -2,34 +2,51 @@
 
 DIST: Defect Identification and Statistics Toolbox
 -
-User Guide
+## User Guide
+
+DIST is a MATLAB toolbox for identifying and analyzing atomic defects present in scanning probe microscopy (SPM) images. This toolbox was created with scanning tunneling microscope (STM) images in mind, but can be used with any image. 
+
+This document is meant to provide a brief overview of the toolbox and how to use it to generate defect statistics. 
+
+Before using this program, you must install Oliver Van Kaick's "Contour Correspondence via Ant Colony Optimization" MATLAB files. You can access it here: https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization.
+
+## Starting up
+
+In order to use DIST, you should have the following MATLAB files installed: 
+
+- DIST
+- sm4reader
+- FilteringGUI.fig
+- FilteringGUI
+- GlobalVar
+- ShapeData
+- FilterData
+- FilterNest
+- Identify Defects
+- DefectStats
+- ContourData
+- NestedContours
+- NestedShapeMatching
+- SmallRegion
+- AreaDifference
+
+DIST requires an image file as an input. If using RHK-generated data in a .sm4 file format, you can convert the file to a .mat structure using Jason Moscatello's "sm4reader.m". This will create a structure with fields corresponding to different information encapsulated in the sm4 file. More information can be found at: https://unh2d.weebly.com/using-sm4-files-in-matlab.html.
+
+DIST accepts the following file formats: 
+- png
+- mat
+- sm4
+- asc
+
+The width of the original image in nanometers is required for generating statistics of identified defects. If the input file is .sm4, this is computed automatically. Otherwise, the width must be provided.
+
+To run DIST, the ACO algorithm by Oliver Van Kaick (described above) must first be installed. From the "aco" folder, you should immediately run the function "set_global" by typing > set_global in the command line. Next, run GlobalVar to initialize global variables in DIST. For first-time users, it is recommended that you set the global variable "help_dlg" to "1" to trigger pop-up help boxes to guide you through the toolbox.
+
+Type the following in MATLAB's command line to begin the program: 
+
+[outputs] = DIST( fileName, imageWidth )
+
+## 
+ 
 
 
-Before using this program, you should make sure to have Oliver Van Kaick's "Contour Correspondence via Ant Colony Optimization" file installed. You can access it here: https://www.mathworks.com/matlabcentral/fileexchange/24094-contour-correspondence-via-ant-colony-optimization.
-
-From the "aco" folder, you should immediately run the function "set_global."
-
-After installing the folder, your starting point should be either a .sm4 file or .mat structure. If you have an image file (.png or .jpg) that has not been converted to a .mat file, you can run the following: 
-
-MyImage = imread('myImageFile.png');
-save('MyImage.mat','MyImage');
-
-'MyImage.mat' is your new starting point. If you are not starting with a .sm4 file, you will need to provide the width of the image in nanometers. 
-
-To use the toolbox, start by running "GlobalVar." Set the global variable "output_graph" to "1" if you want graphical outputs and figures containing the processed images. Set the global variable "help_dlg" to "1" if you would like pop-up help boxes to guide you through the toolbox.
-
-After running "GlobalVar", run the program from MATLAB's command line by typing:
-
-[defCoordsX,defCoordsY,defCount,maxHeightVec,meanHeightVec,areaVec,ImFlatSmooth] = STMDefectAnalysis( ImRaw, nmWidth )
-
-where ImRaw is either the .sm4 or .mat file. You don't need an argument for "nmWidth" if you're starting with a .sm4 file.
-
-"DefCoordsX/Y" are the coordinates of the identified defects in your input image. "DefCount" is the number of defects. "max/meanHeightVec" are vectors containing the maximum and average apparent heights, respectively, of all the defects. "AreaVec" is a vector containing the area of all the defects. "ImFlatSmooth" is the processed image. 
-
-"STMDefectAnalysis" will walk you through the toolbox. After the image is processed, a figure will appear with two images side by side, which are the outputs of "UniformBackground." You will be asked to choose an image to use in analysis. If both images have eliminated too many details from the processed image, type "3" to use "ImFlatSmooth" instead, the output of "ImageProcess." The prompt will ask: 'Which image would you like to include for analysis? Please enter "1" to select the first image, and "2" to select the second. Enter "3" to analyze the processed image.'
-
-Next, you will be asked to type "S" or "F" for defect identification, and "B" or "D" for the brightness level of the defects you're interested in. Entering "S" will allow you to identify defects via shape-matching with a template defect, and entering "F" will allow you to identify defects via filters.
-
-In both "ShapeData" and "FilterData", you will be prompted to specify filters for the contour data. After entering the filter values, a figure will appear with contour plots on it. Use your mouse to select a rectangle surrounding a contour plot of interest.
-
-"STMDefectAnalysis" additionally opens a text file when you run it. The file will be your input file name, plus "MetaData.txt". This text file stays open throughout the whole process and records the various operations performed on the image. While the toolbox is running, you may choose to add your own notes to the file. Remember to save it at the end, and if you are going to re-do the analysis on an image, erase the old data in the text file before running the toolbox again.

@@ -54,7 +54,15 @@ Running DIST will first trigger a GUI with two image frames and four interactive
 - Lower bound parameter: sets the minimum pixel value in the image. Any pixels brighter than this value (and lower than the upper bound parameter) will be set to the mean pixel value in the image, which determines the background. 
 - Upper bound parameter: sets the maximum. pixel value in the image. Any pixels darker than this value (and brighter than the lower bound parameter) will be set to the mean pixel value in the image, which determines the background.
 
-The lower and upper bound parameters should be adjusted until 
+The lower and upper bound parameters should be adjusted until the defects of interest are isolated from the background.
+
+## Defect Identification
+
+### Filtering Contours
+
+### Shape Matching 
+
+## Defect Statistics 
  
 
 

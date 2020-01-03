@@ -54,9 +54,17 @@ Running DIST will first trigger a GUI with two image frames and four interactive
 - Lower bound parameter: sets the minimum pixel value in the image. Any pixels brighter than this value (and lower than the upper bound parameter) will be set to the mean pixel value in the image, which determines the background. 
 - Upper bound parameter: sets the maximum. pixel value in the image. Any pixels darker than this value (and brighter than the lower bound parameter) will be set to the mean pixel value in the image, which determines the background.
 
-The lower and upper bound parameters should be adjusted until the defects of interest are isolated from the background.
+The lower and upper bound parameters should be adjusted until the defects of interest are isolated from the background. 
 
 ## Defect Identification
+
+There are two methods of identifying defects in DIST: filtering contours based on a set of parameters or via shape matching to a reference contour. 
+
+### Contours
+
+The basis of defect identification in DIST is isolating contour plots in the image that surround defects. After the image is processed with the GUI, contour plots are automatically generated. Since the purpose of the image processing is to increase background uniformity and isolate bright and dark extrema, the contour plots should enclose potential defects in the image. Then, contours surrounding defects are isolated with parameters defined by user inputs. 
+
+Typically, a region of interest will have more than one contour, since the pixels in an image artifact are rarely uniform. To organize groups of concentric contours that are all plotted on the same region of interest (a bright or dark extrema in the image)   Before either filtering or using shape matching, the contours are sourted into a cell, with each entry corresponding to a group of "nested" contours.
 
 ### Filtering Contours
 

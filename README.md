@@ -64,9 +64,22 @@ There are two methods of identifying defects in DIST: filtering contours based o
 
 The basis of defect identification in DIST is isolating contour plots in the image that surround defects. After the image is processed with the GUI, contour plots are automatically generated. Since the purpose of the image processing is to increase background uniformity and isolate bright and dark extrema, the contour plots should enclose potential defects in the image. Then, contours surrounding defects are isolated with parameters defined by user inputs. 
 
-Typically, a region of interest will have more than one contour, since the pixels in an image artifact are rarely uniform. To organize groups of concentric contours that are all plotted on the same region of interest (a bright or dark extrema in the image)   Before either filtering or using shape matching, the contours are sourted into a cell, with each entry corresponding to a group of "nested" contours.
+Typically, a region of interest will have more than one contour, since the pixels in an image artifact are rarely uniform. To organize groups of concentric contours that are all plotted on the same region of interest (a bright or dark extrema in the image), the contours are sorted into a cell. Each cell contains an array of all the concentric contours in a cluster. The cell has two rows: the top containing the x-coordinates, and the bottom containing the y-coordinates. The "nested cell" is returned by the function "NestedContours". 
+
+The nested cell is created so that users are able to choose (through filtering or shape matching) the specific contour plot that best describes a defect in the image.
 
 ### Filtering Contours
+
+Contour filtering is a simple way to isolate the contours that exactly encircle a defect in the image. The contours may be filtered using three parameters: area, number of vertices, and brightness.
+
+- Area: the contour area is computed from MATLAB's "bwarea" function, after the contour is used to create a binary image with MATLAB's "poly2mask" function. The actual filter is based on the difference in area between a target contour and the rest of the contours in the image. 
+
+Area difference parameter recommendations: 
+
+- Vertices: each generated contour is defined by a certain number of points, indicating vertices in the contour, which is a closed shape. This parameter is used most often to filter out contours that poorly resolve a region of interest, i.e. contours with few enough vertices that the shape is jagged and blocky. The vertices paremeter is defined as the minimum number of vertices in a contour, so that contours with less vertices are filtered out. 
+
+- Brightness: oftentimes all of the defects of interest an image have a similar brightness. The brightness parameter is used to filter out contours that enclose an area with a brightness different than the target. For example, in an image with both bright defects and slightly darker artifacts (due to noise etc.), any region with a brightness outside a user-defined range will be filtered out. 
+
 
 ### Shape Matching 
 

@@ -253,7 +253,6 @@ elseif strcmp(optionfilt,'Yes')
             xCoord = FilteredNest{1,i}(:,j);
             yCoord = FilteredNest{2,i}(:,j);
             plot(xCoord,yCoord,'Color','magenta'); % plot the contours after being filtered
-            drawnow
             hold on
         end
     end
@@ -642,7 +641,7 @@ elseif strcmp(optquick,'Y')
             defCoordsX = [defCoordsX, xi];
             defCoordsY = [defCoordsY, yi];
             rx = length(xi);
-            cx = 1;
+            %cx = 1;
             plot(xi,yi,'Color','cyan');
             drawnow
             hold on

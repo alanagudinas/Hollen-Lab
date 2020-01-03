@@ -32,6 +32,11 @@ formatSpec = '%s\n';
 
 [NestedContoursCell, xdataC, ydataC, heightVec] = NestedContours(ImUniBg,meanPix); % generate contour data
 
+image_mean = mean2(ImLineFlat);
+image_std = std2(ImLineFlat);
+image_min = image_mean - 5*image_std;
+image_max = image_mean + 5*image_std;
+
 fprintf(fileID,formatSpec,'Contour data generated');
 
 [rU,cU] = size(ImUniBg);
@@ -206,7 +211,7 @@ for i = 1:length(xdataC(1,:))
     end
 end
 
-figure; imshow(ImLineFlat,[]); % may want to compare with original image here?
+figure; imshow(ImLineFlat,[image_min image_max]); % may want to compare with original image here?
 hold on
 plot(xFilt,yFilt,'Color','yellow')
 hold off
@@ -291,7 +296,7 @@ if strcmp(psout,'N')
             end
         elseif strcmp(psoutd,'Y')
             close
-            figure; imshow(ImLineFlat,[]);
+            figure; imshow(ImLineFlat,[image_min image_max]);
             hold on
             plot(xdataC,ydataC,'Color','yellow');
             plot(xFilt,yFilt,'Color','cyan');
@@ -350,7 +355,7 @@ if strcmp(psout,'N')
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
 
-                figure; imshow(ImLineFlat,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[image_min image_max]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -374,7 +379,7 @@ if strcmp(psout,'N')
                 close all
                 xld = defCoordsX;
                 yld = defCoordsY;
-                figure; imshow(ImLineFlat,[]);
+                figure; imshow(ImLineFlat,[image_min image_max]);
                 hold on
                 plot(xld,yld,'Color','yellow')
                 pd = 'Type "0" when finished removing defects. Type "1" to begin. [0]:';
@@ -391,7 +396,7 @@ if strcmp(psout,'N')
                             xld(:,j) = NaN;
                             yld(:,j) = NaN;
                             close all
-                            figure; imshow(ImLineFlat,[]);
+                            figure; imshow(ImLineFlat,[image_min image_max]);
                             hold on
                             plot(xld,yld,'Color','yellow')
                             hold off
@@ -558,7 +563,7 @@ if strcmp(psout,'N')
             end
         end
 
-        figure; imshow(ImLineFlat,[]); 
+        figure; imshow(ImLineFlat,[image_min image_max]); 
         hold on
         plot(xFilt2,yFilt2,'Color','yellow')
         hold off
@@ -595,7 +600,7 @@ if ~isempty(xFilt2)
     defY(defY == 0) = NaN;
     
     close all
-    figure; imshow(ImLineFlat,[]);
+    figure; imshow(ImLineFlat,[image_min image_max]);
     hold on
     plot(xFilt,yFilt,'Color','red');
     plot(xFilt2,yFilt2,'Color','yellow');
@@ -714,7 +719,7 @@ if ~isempty(xFilt2)
                 defCoordsX(defCoordsX == 0) = NaN;
                 defCoordsY(defCoordsY == 0) = NaN;  
                 
-                figure; imshow(ImLineFlat,[]); title('Identified Defects');
+                figure; imshow(ImLineFlat,[image_min image_max]); title('Identified Defects');
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','cyan');
                 hold off
@@ -733,7 +738,7 @@ if ~isempty(xFilt2)
                 defCoordsX;
                 defCoordsY;
             elseif strcmp(psouta2,'Y')
-                figure;imshow(ImLineFlat,[]);
+                figure;imshow(ImLineFlat,[image_min image_max]);
                 hold on
                 plot(defCoordsX,defCoordsY,'Color','yellow')
                 hold off
@@ -805,7 +810,7 @@ optquick = inputdlg(quickadd,titleBox,dims,definput);
 optquick = optquick{1};
 
 if strcmp(optquick,'N')
-    figure; imshow(ImLineFlat,[]); title('All identified defects');
+    figure; imshow(ImLineFlat,[image_min image_max]); title('All identified defects');
     hold on
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
     hold off
@@ -813,11 +818,10 @@ elseif strcmp(optquick,'Y')
     close all
     addX = [];
     addY = [];
-    figure; imshow(ImLineFlat,[]);title('Unidentified contour lines plotted in magenta');
+    figure; imshow(ImLineFlat,[image_min image_max]);title('Unidentified contour lines plotted in magenta');
     hold on
     plot(xdataC,ydataC,'Color','magenta');
     plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
-    hold off
     [r1,c1] = size(defCoordsX);
     [r2,c2] = size(xdataC);
     if r1 > r2
@@ -835,6 +839,7 @@ elseif strcmp(optquick,'Y')
     pd = 'Type "0" when finished adding contour lines. Type "1" to begin. [0]:';
     anspd = input(pd);
     numA = 0;
+    [rA,cA] = size(addDatX);
     while anspd ~= 0
         quickR = getrect;
         for i = idxN
@@ -848,28 +853,19 @@ elseif strcmp(optquick,'Y')
             end 
         end
         if ~isempty(addX)
-            for i = 1:length(addX(1,:))
-                xint = addX(:,i);
-                yint = addY(:,i);
-                xint(isnan(xint)) = [];
-                yint(isnan(yint)) = []; 
-                Im_binR = poly2mask(xint,yint,cU,rU);
-                areaVec(i) = bwarea(Im_binR);
-            end
-            [rx,cx] = size(addX);
-            figure; imshow(ImLineFlat,[]);
-            hold on
-            plot(xdataC,ydataC,'Color','magenta');
-            plot(defCoordsX,defCoordsY,'Color',[173/255;255/255;47/255]);
-            [~,idm] = max(areaVec);
-            xtarg = addX(:,idm);
-            ytarg = addY(:,idm);
-            defCoordsX = [defCoordsX, xtarg];
-            defCoordsY = [defCoordsY, ytarg];
-            plot(xtarg,ytarg,'Color',[173/255;255/255;47/255]);
+            [maxvec] = max(addX);
+            [maxval,idxval] = max(maxvec);
+            xi = addX(:,idxval); % add the largest contour within the rectangle
+            yi = addY(:,idxval);
+            defCoordsX = [defCoordsX, xi];
+            defCoordsY = [defCoordsY, yi];
+            rx = length(xi);
+            %cx = 1;
+            plot(xi,yi,'Color','cyan');
+            drawnow
             numA = numA + 1;
-            addDatX(1:rx,cx+numA) = xtarg;
-            addDatY(1:rx,cx+numA) = ytarg;
+            addDatX(1:rx,cA+numA) = xi;
+            addDatY(1:rx,cA+numA) = yi;
         end
         pd = 'Type "0" when finished adding plots. [0]:';
         anspd = input(pd);
@@ -896,7 +892,7 @@ defCoordsX(defCoordsX == 0) = NaN;
 defCoordsY(defCoordsY == 0) = NaN; 
 
 close all
-figure; imshow(ImLineFlat,[]);
+figure; imshow(ImLineFlat,[image_min image_max]);
 hold on
 plot(defCoordsX,defCoordsY,'Color','cyan');
 plot(addDatX,addDatY,'Color','magenta');

@@ -1,7 +1,7 @@
 % Author: Alana Gudinas
-% 31 July 2018
+% 3 January 2020
 %
-% [appHeightVec,areaVec] = DefectStats(defCoordsX,defCoordsY,ImLineFlat,ImFlatSmooth,ImUniBg,nmWidth) 
+% [defStats,regionStats,xCoords,yCoords] = DefectStats(defCoordsX,defCoordsY,ImUniBg,ImZ,ImFlat,nmWidth) 
 %
 % This function outputs statistical information about the defects in an STM
 % image. The inputs are: (defCoords) the x and y coordinates of the defects, 
@@ -50,18 +50,21 @@ defY = defCoordsY;
 defArea = [];
 centDef = [];
 
+figure; hold on
 for i = 1:nx    
     xi = defX(:,i);
     yi = defY(:,i);
     xi(isnan(xi)) = [];
     yi(isnan(yi)) = [];
+    plot(xi,yi); hold on
     polyin = polyshape(xi,yi);
     [centX,centY] = centroid(polyin);
-    centDef(i,:) = [centX , centY];
+    centDef(i,:) = [centX, centY];
     Im_binR = poly2mask(xi,yi,rI,cI); % Im_binR is a binary image containing only the selected defect in white.
     defArea(i) = bwarea(Im_binR);
     ImBW = imfuse(ImBW,Im_binR);
 end
+hold off
 
 ImBW = rgb2gray(ImBW);
 ImBW = imbinarize(ImBW);
@@ -78,6 +81,8 @@ thetaVec = [];
 phi = linspace(0,2*pi,50);
 cosphi = cos(phi);
 sinphi = sin(phi);
+
+imshow(ImBW,[]); hold on
 
 for k = 1:length(s)
     xbar = s(k).Centroid(1);
@@ -113,12 +118,11 @@ for k = 1:length(s)
     yMat(2,k) = yuM+dev;
     
    % thetaVec(k) = thetaT;
-    
     if output_graph
         plot(x,y,'r','LineWidth',2);
-        hold on
         plot(xM,yM,'Color','blue')
     end
+    hold on
 end
 %------------------
 hold off
@@ -167,6 +171,9 @@ else
 end
         
 if strcmp(vh,'Major') % make local background the zero value % subtract out background to get a real delta z: take average of everything outside the contour boundary = background 
+%     figure; hold on; grid on
+%     xlabel('Pixels','FontSize',15);
+%     ylabel('Apparent height (nm)','FontSize',15);
     for i = 1:length(s)
         if hMethod
             c = improfile(ImZ,xMat(:,i),yMat(:,i)); % improfile records the brightness data along a line in the image.
@@ -181,8 +188,7 @@ if strcmp(vh,'Major') % make local background the zero value % subtract out back
         x_id = xprof(mi);
         x_dif = x_ref - x_id;
         xprof = xprof + x_dif;
-        plot(xprof,c+vt)
-        hold on
+        plot(xprof,c+vt); drawnow; hold on; 
         grid on
         xlabel('Pixels','FontSize',15);
         ylabel('Apparent height (nm)','FontSize',15);
@@ -261,7 +267,8 @@ xrange = [1:1:length(s)];
 axrange = [1:1:length(defArea)];
 
 if output_graph
-    figure; grid on; scatter(axrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
+    figure; scatter(axrange,defAreaScale,szV,[102/255,0/255,204/255],'filled'); title('Identified Defect Areas','FontSize',15); 
+    grid on
     hold on
     xlabel('Index','FontSize',15);
     ylabel('Area (nm^2)','FontSize',15);
@@ -271,17 +278,18 @@ end
 [maxHSort,maxI] = sort(maxHeightVec);
 [meanHSort,meanI] = sort(meanHeightVec);
 
-if hMethod == 0
+if ~hMethod
     meanHSort = meanHSort(end:-1:1);
     meanI = meanI(end:-1:1);
 end
-    
+
 [minHSort,minI] = sort(minHeightVec);
 minHSort = minHSort(end:-1:1);
 minI = minI(end:-1:1);
 
+
 if output_graph
-    sz = 50;
+    %szV = 50; % make vector
     if hMethod
         figure; scatter(xrange,maxHSort,szV,[0/255,0/255,204/255],'filled'); title('Defect Apparent Heights','FontSize',15);
         hold on
@@ -319,30 +327,41 @@ nD = length(centDef(:,1));
 centDefCorrect = NaN(nD,2);
 maxHeightCorr = NaN(nD,1);
 meanHeightCorr = NaN(nD,1);
+meanHeightCorr = NaN(nD,1);
 xCoords = NaN(ny,nD);
 yCoords = NaN(ny,nD);
 
+if hMethod
+    heightVec = maxHeightVec;
+else
+    heightVec = minHeightVec;
+end
 
 for i = 1:nR
  %Calculate the shortest distance and select that index
     distanceFromSet = sqrt((centReg(i,1)-centDef(:,1)).^2 + (centReg(i,2)-centDef(:,2)).^2);
-    
+
     %pull out the index of the closest location from set two
     [~,min_index] = min(distanceFromSet);
-    
+
     centDefCorrect(i,1:2) = centDef(min_index,1:2);
-    maxHeightCorr(i) = maxHeightVec(min_index);
-    meanHeightCorr(i) = meanHeightVec(min_index);
+    heightCorr(i) = heightVec(min_index);
+    meanHeightCorr(i) = heightVec(min_index);
     xCoords(:,i) = defX(:,min_index);
     yCoords(:,i) = defY(:,min_index);
-    
+
 end
 
-maxHeightVec = maxHeightCorr;
+if hMethod
+    maxHeightVec = heightCorr';
+else
+    minHeightVec = heightCorr';
+end
+
 meanHeightVec = meanHeightCorr;
 
 
-if hMethod ==1
+if hMethod
     defStats = [maxHeightVec, maxI, meanHeightVec, meanI];
 else 
     defStats = [minHeightVec, minI, meanHeightVec, meanI];

@@ -41,7 +41,7 @@ image_max = image_mean + 5*image_std;
 
 figure; imshow(ImUniBg,[image_min image_max]); title('Defect that will be used in shape-matching comparison');
 hold on
-plot(xdataC,ydataC,'Color','blue'); % Plot all the contour lines in the image.
+plot(xdataC,ydataC,'Color','magenta'); % Plot all the contour lines in the image.
 % [173/255;255/255;47/255]
 
 
@@ -86,7 +86,7 @@ k = 1; % for indexing
 
 close all
 
-figure; imshow(ImUniBg,[image_min image_max]);
+figure; imshow(ImUniBg,[image_min image_max]); title('Template Defect','FontSize',15);
 hold on
 
 for k = idxN

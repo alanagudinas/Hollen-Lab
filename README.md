@@ -83,7 +83,24 @@ Area difference parameter recommendations:
 
 ### Shape Matching 
 
+DIST uses Oliver Van Kaick's alogrithm for contour correspondence using ant colony optimization (ACO). This function is useful for images with defects that have a distinctive shape, or when a user is interested in only identifying defects with a specific shape. 
+
+Because a large volume of contour plots in the image will make the shape-matching process slow, the user has the option to filter the contours first, as described above. 
+
+To begin the process, the user is prompted to choose a template defect. The template contour is then compared to every contour in the image, generating a best-cost value for each comparison. The best matching contour from each contour nest (described in "Contours") is selected as a postive defect identfication. DIST generates a histogram with the number of defects grouped by best cost parameter, with a lower value corresponding to a better match. The user can then filter the results based which defects are a closest match in shape. 
+
 ## Defect Statistics 
  
+Statistics are automatically computed after the defect identification process. The computed statistics are listed below: 
 
+- Line profile: pixel brightness values calculated from a line cross section across each defect contour
+- Apparent height: vectors of mean and max/min pixel value for each defect contour (computed from line profile), scaled to nm 
+- X/Y coordinates: coordinates of the location of each defect contour
+
+Statistics computed using MATLAB's "regionprops": 
+
+- Area: area of each defect
+- Major/minor axis length
+- Centroid: location of centroid of each contour
+- Orientation: angle orientation of each contour with respect to a horizontal axis (computed from elipse)
 

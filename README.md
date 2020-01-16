@@ -1,7 +1,7 @@
 
 DIST: Defect Identification and Statistics Toolbox
 -
-## User Guide
+## Program Description and User Guide
 
 DIST is a MATLAB toolbox for identifying and analyzing atomic defects present in scanning probe microscopy (SPM) images. This toolbox was created with scanning tunneling microscope (STM) images in mind, but can be used with any image. 
 
